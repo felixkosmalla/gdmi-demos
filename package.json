@@ -2,6 +2,7 @@
   "name": "gdmi-demos",
   "private": true,
   "version": "0.1.0",
+  "license": "MIT",
   "description": "Interaktive Web-Demos zur Vorlesung Grundlagen der Medieninformatik (GdMI)",
   "type": "module",
   "scripts": {
