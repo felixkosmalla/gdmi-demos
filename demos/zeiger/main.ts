@@ -131,6 +131,10 @@ const timePlot = createPlot(qs('#plot-time'), {
   ariaLabel: 'Zeitverlauf der einzelnen Schwingungen und ihrer Summe',
   draw(p) {
     const ptrs = pointers();
+    if (ptrs.length === 1) {
+      p.fn((tau) => component(ptrs[0], t - tau), { color: COLORS[0], width: 4 });
+      return;
+    }
     ptrs.forEach((ptr, i) => {
       p.fn((tau) => component(ptr, t - tau), { color: COLORS[i], width: 2, alpha: 0.6, dash: DASHES[i] });
     });
@@ -337,7 +341,7 @@ function drawPhasor(ptrs: Pointer[]): boolean {
   }
 
   // sum pointer underneath (thicker), the chain on top
-  arrow(pts[0], tip, sumColor, 6);
+  if (ptrs.length > 1) arrow(pts[0], tip, sumColor, 6);
   ptrs.forEach((_, i) => arrow(pts[i], pts[i + 1], col(COLORS[i]), 3.5));
   pctx.fillStyle = sumColor;
   pctx.beginPath();
@@ -406,6 +410,7 @@ qs('#controls').append(
     key: 'n',
     label: 'Zeiger',
     options: [
+      { value: 1, label: '1' },
       { value: 2, label: '2' },
       { value: 3, label: '3' },
     ],
@@ -530,6 +535,9 @@ function renderStatus(ptrs: Pointer[]): void {
   let text: string;
   if (act.length === 0) {
     text = 'Alle Amplituden sind 0.';
+  } else if (ptrs.length === 1) {
+    const [ptr] = ptrs;
+    text = `Ein Zeiger: Sinus mit A = ${num(ptr.a)}, f = ${hz(ptr.f)}, φ = ${formatNumber(ptr.p)}° (Periode ${formatNumber(1 / ptr.f, 2)} s).`;
   } else if (eq && eq.a < 0.005) {
     text = 'Gleiche Frequenz, die Zeiger heben sich auf: Die Summe ist 0.';
   } else if (eq) {
@@ -549,8 +557,13 @@ function renderStatus(ptrs: Pointer[]): void {
 }
 
 function renderLegend(ptrs: Pointer[]): void {
-  const items: LegendItem[] = ptrs.map((_, i) => ({ label: `Zeiger ${i + 1}`, color: COLORS[i], dash: DASHES[i], width: 2 }));
-  items.push({ label: 'Summe', color: SUM_COLOR, width: 4 });
+  const items: LegendItem[] =
+    ptrs.length === 1
+      ? [{ label: 'Zeiger 1', color: COLORS[0], width: 4 }]
+      : [
+          ...ptrs.map((_, i) => ({ label: `Zeiger ${i + 1}`, color: COLORS[i], dash: DASHES[i], width: 2 })),
+          { label: 'Summe', color: SUM_COLOR, width: 4 },
+        ];
   capTime.querySelector('.legend-inline')?.remove();
   capTime.append(legendElement(items));
 }
@@ -562,7 +575,9 @@ function renderFormula(): void {
     `A = √(${num(a1)}² + ${num(a2)}² + 2 · ${num(a1)} · ${num(a2)} · cos(${formatNumber(p1)}° − ${formatNumber(p2)}°))` +
     ` = ${num(a)}`;
   formulaNote.textContent =
-    f1 !== f2
+    n === 1
+      ? 'Die Formel braucht zwei Zeiger. Für die Summe „Zeiger: 2“ wählen.'
+      : f1 !== f2
       ? 'Achtung: Die Formel gilt nur für f₁ = f₂. Bei verschiedenen Frequenzen ändert der Summenzeiger ständig seine Länge.'
       : n === 3
         ? 'Die Formel berücksichtigt nur Zeiger 1 und 2. Die Statuszeile oben zeigt die Amplitude aller drei Zeiger.'
@@ -575,6 +590,7 @@ function render(): void {
   const { n, win } = state.values;
   yMax = Math.max(0.5, active(ptrs).reduce((s, ptr) => s + ptr.a, 0)) * 1.12;
   timePlot.setOptions({ xRange: [0, win], yRange: [-yMax, yMax] });
+  pointerRows[1].hidden = n < 2;
   pointerRows[2].hidden = n < 3;
   if (n !== legendN) {
     renderLegend(ptrs);

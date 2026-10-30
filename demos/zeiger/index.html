@@ -84,116 +84,11 @@
     </main>
 
     <section class="explain">
-      <h2>Erklärung</h2>
-      <p>
-        Eine <strong>harmonische Schwingung</strong> hat die Form
-      </p>
-      <p class="formula">x(t) = A · sin(2π · f · t + φ)</p>
-      <p>
-        mit Amplitude A, Frequenz f und Phase (Startwinkel) φ. Man kann sie als <strong>drehenden
-        Zeiger</strong> darstellen: Ein Pfeil der Länge A dreht sich gegen den Uhrzeigersinn f-mal pro
-        Sekunde um den Ursprung (1 Hz = eine Umdrehung pro Sekunde) und beginnt bei t = 0 im Winkel φ. Die
-        <strong>Höhe der Zeigerspitze</strong>, also ihre Projektion auf die senkrechte Achse, ist genau x(t).
-        Mathematisch ist der Zeiger die komplexe Zahl A · e<sup>i(2πft + φ)</sup>, und x(t) ist ihr
-        Imaginärteil (Sinus-Konvention). Diese Darstellung heißt auch <strong>Phasor</strong>.
-      </p>
-      <p>
-        <strong>Summation:</strong> Um zwei Schwingungen zu addieren, hängt man die Zeiger aneinander. Der
-        Drehpunkt des zweiten Zeigers sitzt am Ende des ersten, der dritte am Ende des zweiten. Der dicke
-        <strong>Summenzeiger</strong> reicht vom Ursprung bis zur letzten Spitze. Seine Höhe ist
-        x<sub>1</sub>(t) + x<sub>2</sub>(t), denn die Höhe einer Vektorsumme ist die Summe der Höhen. Die
-        gestrichelte Linie überträgt diese Höhe in die Zeitgrafik.
-      </p>
-      <p>
-        <strong>Zeitachse:</strong> Die Zeitgrafik zeigt die letzten Sekunden. Ganz links (0) steht der
-        aktuelle Wert, weiter rechts liegen ältere Werte. Die Kurve „läuft“ so aus dem Zeigerdiagramm
-        heraus. Die Frequenzen sind bewusst klein (Bruchteile von Umdrehungen pro Sekunde), damit man den
-        Zeigern folgen kann. Mit „Tempo“ läuft die Animation zusätzlich in Zeitlupe; die Zeitangaben
-        beziehen sich immer auf die Demo-Zeit.
-      </p>
-      <p>
-        <strong>Gleiche Frequenz:</strong> Alle Zeiger drehen gleich schnell, das Parallelogramm aus den
-        Zeigern dreht sich als Ganzes. Die Summe ist deshalb wieder ein Sinus mit derselben Frequenz. Seine
-        Amplitude ist die Länge des Summenzeigers:
-      </p>
-      <p class="formula">A = √(A<sub>1</sub>² + A<sub>2</sub>² + 2 A<sub>1</sub>A<sub>2</sub> · cos(φ<sub>1</sub> − φ<sub>2</sub>))</p>
-      <p>
-        Zeigen beide Zeiger in dieselbe Richtung (φ<sub>1</sub> = φ<sub>2</sub>), addieren sich die
-        Amplituden. Zeigen sie in entgegengesetzte Richtungen (180°), ziehen sie sich ab.
-      </p>
-      <p>
-        <strong>Verschiedene Frequenzen:</strong> Die Zeiger drehen unterschiedlich schnell, der
-        Summenzeiger ändert ständig Länge und Drehgeschwindigkeit. Die Summe ist kein Sinus mehr. Stehen die
-        Frequenzen in einem ganzzahligen Verhältnis, etwa f<sub>2</sub> = 2 · f<sub>1</sub>
-        (<strong>Oberschwingung</strong>), kehrt die Zeigerkette nach einer festen Zeit in dieselbe Lage
-        zurück: Die Summe ist <strong>periodisch</strong>, mit der Periode T = 1/ggT(f<sub>1</sub>,
-        f<sub>2</sub>, …). Das ist die Grundidee der Fourier-Reihe (Deck d09): Eine periodische Funktion
-        wird aus Sinusschwingungen bei ganzzahligen Vielfachen einer Grundfrequenz zusammengesetzt.
-      </p>
-      <p>
-        <strong>Schwebung:</strong> Liegen zwei Frequenzen nah beieinander, dreht sich Zeiger 2 relativ zu
-        Zeiger 1 nur langsam, mit |f<sub>1</sub> − f<sub>2</sub>| Umdrehungen pro Sekunde. Der Summenzeiger
-        wird deshalb abwechselnd lang (A<sub>1</sub> + A<sub>2</sub>) und kurz
-        (|A<sub>1</sub> − A<sub>2</sub>|). In der Zeitgrafik schwillt die Schwingung periodisch an und ab.
-        Diese Hüllkurve wiederholt sich mit der Schwebungsperiode
-      </p>
-      <p class="formula">T<sub>S</sub> = 1 / |f<sub>1</sub> − f<sub>2</sub>|.</p>
-
-      <h2>Ausprobieren / Aufgaben</h2>
-      <p>Länge des Zeitfensters und die Amplitudenformel mit den aktuellen Werten von Zeiger 1 und 2:</p>
+      <h2>Weitere Einstellungen</h2>
+      <p>Länge des Zeitfensters und die Amplitude der Summe bei gleicher Frequenz, mit den aktuellen Werten von Zeiger 1 und 2:</p>
       <div class="controls" id="extra-controls"></div>
       <p class="formula" id="formula" aria-live="polite"></p>
       <p id="formula-note"></p>
-      <ol>
-        <li>
-          Zwei Zeiger mit gleicher Frequenz und gleicher Amplitude (Beispiel „Gleiche Frequenz“, dann
-          A<sub>2</sub> = 1 stellen): Bei welcher Phasendifferenz verschwindet die Summe? Bei welcher
-          verdoppelt sie sich?
-          <details>
-            <summary>Lösung</summary>
-            <p>
-              Bei φ<sub>2</sub> − φ<sub>1</sub> = 180° zeigen die Zeiger in entgegengesetzte Richtungen, die
-              Summe ist immer 0 (cos 180° = −1, also A = √(1 + 1 − 2) = 0). Bei 0° zeigen sie in dieselbe
-              Richtung, A = 2. Bei 90° ergibt sich A = √2 ≈ 1,41.
-            </p>
-          </details>
-        </li>
-        <li>
-          Erzeuge eine periodische Schwingung, die kein Sinus ist. Was muss für die Frequenzen gelten?
-          <details>
-            <summary>Lösung</summary>
-            <p>
-              Die Frequenzen müssen verschieden sein und in einem ganzzahligen (rationalen) Verhältnis stehen,
-              z. B. f<sub>2</sub> = 2 · f<sub>1</sub> wie im Beispiel „Oberschwingung“. Die Periode ist dann
-              1/ggT der Frequenzen; bei 0,5 Hz und 1 Hz also 2 s. Die Statuszeile zeigt sie an.
-            </p>
-          </details>
-        </li>
-        <li>
-          Wähle „Schwebung“. Halte die Animation an und miss in der Zeitgrafik den Abstand zweier Stellen, an
-          denen die Schwingung fast verschwindet. Vergleiche mit 1/|f<sub>1</sub> − f<sub>2</sub>|.
-          <details>
-            <summary>Lösung</summary>
-            <p>
-              Mit f<sub>1</sub> = 1 Hz und f<sub>2</sub> = 1,1 Hz ist 1/|f<sub>1</sub> − f<sub>2</sub>| =
-              1/0,1 Hz = 10 s. Im 20-s-Fenster liegen die Einschnürungen 10 s auseinander. Genau dann zeigen
-              die beiden Zeiger in entgegengesetzte Richtungen.
-            </p>
-          </details>
-        </li>
-        <li>
-          Vorbereitung auf d09: Stelle drei Zeiger ein mit f = 0,25 Hz, 0,75 Hz und 1,25 Hz (1-, 3- und
-          5-fache Grundfrequenz), Amplituden 1, 0,33 und 0,2 und alle Phasen auf 0°. Welche Form entsteht?
-          <details>
-            <summary>Lösung</summary>
-            <p>
-              Eine Annäherung an eine <strong>Rechteckschwingung</strong>: flache Plateaus mit kleinen Wellen
-              und steile Flanken. Je mehr ungerade Vielfache mit Amplitude 1/k man hinzunimmt, desto
-              rechteckiger wird sie (Fourier-Reihe des Rechtecks).
-            </p>
-          </details>
-        </li>
-      </ol>
 
       <h3>Schwebung hören</h3>
       <p>
