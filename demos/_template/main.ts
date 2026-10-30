@@ -1,7 +1,7 @@
 // Demo template: copy demos/_template/ to demos/<slug>/ and adapt.
 // Wiring: urlState (query string) → controls → plot redraw.
 import '../../src/lib/page.css';
-import { formatNumber, fullscreenButton, qs, resetButton, slider, urlState } from '../../src/lib/controls';
+import { formatNumber, fullscreenButton, ideaCredit, qs, resetButton, slider, urlState } from '../../src/lib/controls';
 import { createPlot, roles } from '../../src/lib/plot';
 
 // 1. State: every parameter with its default. Types (number/boolean/string)
@@ -33,6 +33,8 @@ qs('#extra-controls').append(
   slider(state, { key: 'a', label: 'Amplitude', symbol: 'A', min: 0, max: 1, step: 0.05 }),
 );
 qs('#head-actions').append(fullscreenButton(qs('#lecture')), resetButton(state));
+// "Idee nach: …" from the `replaces` field of this demo's entry in src/demos.ts.
+qs('#lecture').append(ideaCredit('<slug>'));
 
 // 4. Derived text (status line) and redraw on every change.
 const status = qs('#status');

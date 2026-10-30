@@ -23,7 +23,7 @@ Jeder Push auf `main` baut die Seite und veröffentlicht sie über GitHub Pages 
 ## Neue Demo hinzufügen
 
 1. `demos/_template/` nach `demos/<slug>/` kopieren. Die Demo ist dann unter `/gdmi-demos/<slug>/` erreichbar (nicht unter `/demos/<slug>/`).
-2. In `src/demos.ts` einen Eintrag ergänzen (Titel, Deck, Folie, ersetzte Demo). Sobald `ready: true` gesetzt ist, erscheint sie auf der Startseite.
+2. In `src/demos.ts` einen Eintrag ergänzen (Titel, Deck, Folie, ersetzte Demo). Das Feld `replaces` erscheint in der Demo als Zeile „Idee nach: …“ (`ideaCredit()`, siehe Vorlage). Sobald `ready: true` gesetzt ist, erscheint sie auf der Startseite.
 3. Auf der Folie den alten Link durch die neue URL ersetzen und die Tabelle unten ergänzen.
 
 Gemeinsame Bausteine liegen in `src/lib/` (Plots, URL-gebundene Regler, DSP, Audio, Layout). Für größere Vorhaben gibt es in [`planning/`](planning/) je eine Aufgabendatei pro Demo. [`planning/README.md`](planning/README.md) beschreibt Format, Seitendesign und Tech-Stack.

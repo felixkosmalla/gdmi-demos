@@ -7,7 +7,8 @@
  *     .plots                plot grid (stacked; .plots--row = side by side)
  *       figure.plot-box > figcaption + .plot (canvas container)
  *     .controls             essential controls
- *   section.explain         self-study part below the fold
+ *     p.credit              "Idee nach: …" (ideaCredit() in controls.ts)
+ *   section.explain        self-study part below the fold
  */
 
 /* ---------- Theme ------------------------------------------------------ */
@@ -352,6 +353,14 @@ sub {
   margin: 0;
   font-weight: 600;
   min-height: 1.5em;
+}
+
+/* "Idee nach: …" line at the bottom of the lecture area (ideaCredit()) */
+.credit {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.7em;
+  overflow-wrap: anywhere;
 }
 
 input[type='range'] {

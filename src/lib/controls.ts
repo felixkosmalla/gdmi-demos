@@ -6,6 +6,7 @@
  *   controls.append(slider(state, { key: 'fs', label: 'Abtastrate', symbol: 'f_s', min: 20, max: 600, unit: 'Hz' }));
  *   state.subscribe(() => plot.redraw());
  */
+import { demos } from '../demos';
 
 export type Primitive = number | boolean | string;
 export type StateValues = Record<string, Primitive>;
@@ -417,6 +418,20 @@ export function button(o: ButtonOptions): HTMLButtonElement {
   if (o.title) b.title = o.title;
   b.addEventListener('click', o.onClick);
   return b;
+}
+
+/**
+ * Short "Idee nach: …" line for the lecture area, taken from the demo's
+ * `replaces` entry in src/demos.ts. Append it to `#lecture`. The longer
+ * "Quelle / Idee" paragraph below the fold stays in the HTML.
+ */
+export function ideaCredit(slug: string): HTMLParagraphElement {
+  const demo = demos.find((d) => d.slug === slug);
+  if (!demo) throw new Error(`ideaCredit: no entry for "${slug}" in src/demos.ts`);
+  const p = document.createElement('p');
+  p.className = 'credit';
+  p.textContent = `Idee nach: ${demo.replaces}`;
+  return p;
 }
 
 /** "Zurücksetzen" button that restores all defaults of `state`. */

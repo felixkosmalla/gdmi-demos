@@ -55,7 +55,8 @@ Every demo is used in two situations:
 - **Below the fold:**
   - **"Erklärung"**: a short German explanation in the slides' terminology (Abtastrate, Nyquist-Frequenz, Zeiger, Oberschwingung …).
   - **"Ausprobieren / Aufgaben"**: extra controls and 3–5 small exercises.
-  - A **"Quelle / Idee"** line crediting the original demo.
+  - A **"Quelle / Idee"** paragraph crediting the original demo (with its old URL).
+- **Credit in the lecture area:** `ideaCredit(slug)` appends a short "Idee nach: …" line built from the demo's `replaces` field in `src/demos.ts`, so the source is visible on the projector too. Every demo calls it (see the template).
 - **URL state:** all relevant parameters live in the query string (e.g. `abtastung/?fs=150`). Changing a control updates the URL with `history.replaceState`, and loading a URL restores the state, so a slide can link to an exact configuration. A "Zurücksetzen" button restores the defaults.
 - **Look:** German UI, light theme by default (projectors), accent color `#0066C0` (from the slide template), neutral greys, a consistent color per signal role across demos (original = accent blue, samples = dark grey, reconstruction/approximation = red/orange). Usable on phones (~390 px): plots stack vertically and controls go full width.
 - **Privacy:** no tracking, no cookies, no external CDNs or fonts. Everything is self-hosted.

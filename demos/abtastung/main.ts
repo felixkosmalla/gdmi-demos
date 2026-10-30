@@ -8,6 +8,7 @@ import {
   button,
   formatNumber,
   fullscreenButton,
+  ideaCredit,
   qs,
   resetButton,
   slider,
@@ -287,6 +288,7 @@ qs('#extra-controls').append(
   }),
 );
 qs('#head-actions').append(fullscreenButton(qs('#lecture')), resetButton(state));
+qs('#lecture').append(ideaCredit('abtastung'));
 
 // ---------------------------------------------------------------------------
 // Status line and caption
