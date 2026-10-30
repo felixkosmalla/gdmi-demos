@@ -52,8 +52,8 @@ Controls in the lecture area:
 
 | Param | Type | Default | Meaning |
 |-------|------|---------|---------|
-| `preset` | string | `oberschwingung` | initial preset |
-| `n` | number | 2 | number of pointers (1–3) |
+| `preset` | string | `eigene` (none) | initial preset |
+| `n` | number | 1 | number of pointers (1–3) |
 | `a1`,`a2`,`a3` | number | preset | amplitudes |
 | `f1`,`f2`,`f3` | number | preset | frequencies (rotations per second in demo time) |
 | `p1`,`p2`,`p3` | number | preset | phases in degrees |
@@ -93,3 +93,4 @@ Implementation notes (2026-10-30, done):
 - Extra: `win` (time window, s) in the URL; Space toggles play/pause; it starts paused if `prefers-reduced-motion` is set; "Schwebung hören" plays 440 + 444 Hz.
 - The time-axis direction and the default preset could be checked with the lecturer.
 - 2026-10-30, on request: the "Erklärung" and "Aufgaben" parts were removed from the page. Below the fold, only "Weitere Einstellungen" (time window, live amplitude formula, Schwebung hören) and "Quelle / Idee" remain. `n` also allows a single pointer (1–3).
+- 2026-10-30, on request: the demo **starts with a single pointer** (`n=1`, no preset active; the other values are the "Oberschwingung" values, so choosing 2 pointers gives f₂ = 2·f₁). The presets switch to two pointers. "Zurücksetzen" goes back to one pointer.

@@ -42,11 +42,14 @@ type Params = (typeof PRESETS)[PresetName]['values'];
 const PARAM_KEYS = Object.keys(PRESETS.oberschwingung.values) as (keyof Params)[];
 const isPreset = (s: string): s is PresetName => Object.hasOwn(PRESETS, s);
 
-// `preset` = 'eigene' once a parameter was changed by hand; then the URL holds
-// every value that differs from the defaults and no preset is applied on load.
+// `preset` = 'eigene' when no preset is active (at the start, or once a
+// parameter was changed by hand); then the URL holds every value that differs
+// from the defaults and no preset is applied on load.
+// Start: a single pointer; the presets switch to two.
 const state = urlState({
-  preset: 'oberschwingung',
+  preset: 'eigene',
   ...PRESETS.oberschwingung.values, // n, a1…a3, f1…f3 (Hz), p1…p3 (degrees), win (time window in s)
+  n: 1,
   speed: 1, // animation speed (slow motion < 1)
 });
 
