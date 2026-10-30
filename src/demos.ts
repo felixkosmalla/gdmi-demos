@@ -72,6 +72,6 @@ export const demos: DemoInfo[] = [
     deck: 'd09',
     slides: 'Folie 13',
     replaces: '„1D Fast Fourier Transform“ (A. van Dam, D. L. Gould, Brown University Exploratories)',
-    ready: false,
+    ready: true,
   },
 ];

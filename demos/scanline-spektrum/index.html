@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Frequenzraum bei Bilddaten – GdMI-Demos</title>
+    <meta name="description" content="Eine Linie durch ein Bild ziehen: Helligkeitsverlauf entlang der Bildzeile oder -spalte und sein Frequenzspektrum." />
+    <style>
+      /* image | plots | side panel; the image is a square that fits the height */
+      #split {
+        --img-size: min(36vw, calc(100dvh - 230px));
+        flex: 1 1 auto;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: var(--img-size) minmax(0, 1fr) clamp(200px, 14vw, 260px);
+        gap: var(--gap) var(--gap-lg);
+      }
+      .image-col {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+        min-height: 0;
+      }
+      .image-col figcaption {
+        font-weight: 600;
+        font-size: 0.9em;
+        margin-bottom: 2px;
+      }
+      .image-box {
+        margin: 0;
+      }
+      .image-wrap {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1;
+        background: var(--bg-soft);
+        border-radius: 4px;
+      }
+      .image-wrap > canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+        cursor: ns-resize;
+        border-radius: 4px;
+      }
+      .image-wrap[data-dir='spalte'] > canvas {
+        cursor: ew-resize;
+      }
+      .image-wrap.dragover {
+        outline: 4px dashed var(--accent);
+        outline-offset: 3px;
+      }
+      #status {
+        font-size: 0.85em;
+      }
+      .hint {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 0.8em;
+      }
+      .image-picker {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 4px;
+      }
+      .pick {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 40px;
+        padding: 3px 10px 3px 3px;
+        font: inherit;
+        font-size: 0.9em;
+        text-align: left;
+        line-height: 1.15;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-soft);
+        color: var(--text);
+        cursor: pointer;
+      }
+      .pick:hover {
+        border-color: var(--accent);
+      }
+      .pick[aria-pressed='true'] {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+      }
+      .pick .thumb {
+        flex: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 4px;
+        object-fit: cover;
+        background: var(--bg);
+      }
+      .pick .thumb--add {
+        display: grid;
+        place-items: center;
+        border: 2px dashed var(--text-muted);
+        color: var(--text-muted);
+        font-size: 1.4em;
+        font-weight: 600;
+      }
+      .pick[aria-pressed='true'] .thumb--add {
+        border-color: #fff;
+        color: #fff;
+        background: transparent;
+      }
+      @media (max-width: 1000px) {
+        .lecture {
+          height: auto;
+          min-height: 0;
+        }
+        #split {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .image-col {
+          width: 100%;
+          max-width: 560px;
+          justify-self: center;
+        }
+        #plots {
+          grid-auto-rows: auto;
+        }
+        #plots .plot {
+          flex: none;
+          height: 260px;
+        }
+        .image-picker {
+          grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        }
+      }
+    </style>
+    <script type="module" src="./main.ts"></script>
+  </head>
+  <body>
+    <main class="lecture" id="lecture">
+      <header class="lecture-head">
+        <a class="back" href="../">← Alle Demos</a>
+        <h1>Frequenzraum bei Bilddaten</h1>
+        <div class="head-actions" id="head-actions"></div>
+      </header>
+
+      <div id="split">
+        <div class="image-col">
+          <figure class="image-box">
+            <figcaption id="cap-image">Bild</figcaption>
+            <div class="image-wrap" id="image-wrap">
+              <canvas id="image" tabindex="0" role="slider" aria-label="Position der Linie im Bild"></canvas>
+            </div>
+          </figure>
+          <p class="status" id="status" aria-live="polite"></p>
+        </div>
+
+        <div class="plots" id="plots">
+          <figure class="plot-box">
+            <figcaption class="caption-row" id="cap-profile"><span>Helligkeitsverlauf entlang der Linie</span></figcaption>
+            <div class="plot" id="plot-profile"></div>
+          </figure>
+          <figure class="plot-box">
+            <figcaption class="caption-row" id="cap-spectrum"><span>Spektrum</span></figcaption>
+            <div class="plot" id="plot-spectrum"></div>
+          </figure>
+        </div>
+
+        <aside class="side-panel" aria-label="Einstellungen">
+          <div class="control" role="group" aria-labelledby="pick-label">
+            <span class="control-label" id="pick-label">Bild</span>
+            <div class="image-picker" id="picker"></div>
+          </div>
+          <div class="controls" id="controls"></div>
+          <p class="hint">
+            Linie ziehen oder Pfeiltasten. Eigenes Bild auch per Drag &amp; Drop, es bleibt auf deinem Gerät.
+          </p>
+        </aside>
+      </div>
+    </main>
+
+    <section class="explain">
+      <h2>Erklärung</h2>
+      <p>
+        <strong>Ein Bild ist ein 2D-Signal.</strong> Bei Audiodaten hängt der Wert von der Zeit t ab, bei
+        Bilddaten von der Position (x, y). Für die Frequenzanalyse betrachtet man einzelne Zeilen (Werte über x)
+        und Spalten (Werte über y). Jede davon ist ein ganz normales 1D-Signal, nur über dem Ort statt über der
+        Zeit. Die Demo nimmt als Wert die <strong>Helligkeit</strong> Y = 0,2126 · R + 0,7152 · G + 0,0722 · B
+        (0 = schwarz, 255 = weiß) und verkleinert jedes Bild auf 512 × 512 Pixel.
+      </p>
+      <p>
+        <strong>Ortsfrequenz:</strong> Wie oft wiederholt sich die Helligkeit entlang der Linie? Das Spektrum
+        zählt in <strong>Perioden pro Bildbreite</strong> (bei einer Spalte: pro Bildhöhe). k = 8 heißt: Ein
+        Hell-Dunkel-Muster passt 8-mal nebeneinander ins Bild. Bei 512 Pixeln geht k von 0 bis 256. Die höchste
+        Frequenz k = 256 ist ein Wechsel hell, dunkel, hell, … von Pixel zu Pixel, also zwei Pixel pro Periode.
+        Das ist die Nyquist-Frequenz des Bildes: Die Pixel sind die Abtastwerte.
+      </p>
+      <p>
+        <strong>k = 0 ist der Gleichanteil</strong>, die mittlere Helligkeit der Linie (dunkelgrauer Balken und
+        gestrichelte Linie im Helligkeitsverlauf). Er ist meist viel größer als alle anderen Werte. In der
+        linearen Skala wird sein Balken deshalb oben abgeschnitten, und sein Wert steht daneben.
+      </p>
+      <ul>
+        <li>
+          <strong>Feine Muster und harte Kanten</strong> bedeuten hohe Frequenzen. Bei feinen Streifen liegt der
+          Gipfel bei großem k. Eine Kante braucht wie der Sprung eines Rechtecksignals viele Oberschwingungen,
+          deren Amplituden nur langsam mit 1/k abfallen.
+        </li>
+        <li>
+          <strong>Glatte Flächen</strong> (Himmel, Verlauf) bedeuten tiefe Frequenzen: Fast die ganze Energie
+          liegt bei den ersten paar k.
+        </li>
+        <li>
+          <strong>Natürliche Bilder</strong> haben die meiste Energie bei tiefen Frequenzen, weil große, glatte
+          Flächen überwiegen. Die hohen Frequenzen sind so klein, dass man sie in der linearen Skala kaum sieht.
+          Die <strong>logarithmische Skala</strong> (Standard für Fotos) macht sie sichtbar: Jede Hilfslinie ist
+          ein Faktor 10.
+        </li>
+      </ul>
+      <p>
+        Der Wert „Energie bei k ≤ 16“ unter dem Bild sagt, welcher Anteil der Energie (Summe der quadrierten
+        Amplituden, ohne den Gleichanteil) in den 16 tiefsten Frequenzen steckt.
+      </p>
+      <p>
+        <strong>Die FFT behandelt die Linie als eine Periode</strong> eines periodischen Signals: Nach dem
+        letzten Pixel kommt gedanklich wieder das erste. Sind Anfang und Ende der Linie unterschiedlich hell,
+        entsteht dort ein Sprung, der ebenfalls hohe Frequenzen erzeugt. Bei der „Kante“ ist das gut zu sehen:
+        Die Zeile ist dunkel, dann hell, dann wieder dunkel, also eine Periode eines Rechtecksignals. Ein
+        Fenster (Hann) blendet Anfang und Ende weich aus und dämpft diesen Effekt, verbreitert dafür die
+        Spektrallinien (Schalter unten).
+      </p>
+      <p>
+        <strong>Ausblick Kompression:</strong> Weil die hohen Frequenzen in natürlichen Bildern so wenig
+        Energie haben, ändert sich ein Bild kaum, wenn man sie weglässt oder gröber speichert. Das probiert der
+        Tiefpass unten aus. Verfahren wie JPEG nutzen genau das (Details später in der Vorlesung).
+      </p>
+
+      <h2>Ausprobieren / Aufgaben</h2>
+      <div class="controls" id="extra-controls"></div>
+      <ol>
+        <li>
+          Vergleiche „Streifen grob“ und „Streifen fein“: Wo liegt der Gipfel im Spektrum, und wie hängt er mit
+          der Anzahl der Streifen zusammen? Schalte danach auf „Spalte“ um.
+          <details>
+            <summary>Lösung</summary>
+            <p>
+              Grob: Gipfel bei k = 8, fein: bei k = 32. Das ist genau die Zahl der hell-dunkel-Perioden über die
+              Bildbreite. Feinere Streifen haben die höhere Ortsfrequenz. Da die Streifen Sinusform haben, gibt
+              es außer dem Gleichanteil nur diesen einen Balken. In einer Spalte ändert sich die Helligkeit gar
+              nicht: Es bleibt nur der Gleichanteil (k = 0) übrig. Die Frequenz eines Bildes hängt also von der
+              Richtung ab.
+            </p>
+          </details>
+        </li>
+        <li>
+          Wähle „Kante“. Wie sieht das Spektrum eines einzelnen Sprungs aus? Vergleiche mit dem Rechteck in der
+          Demo <a href="../fourier-reihe/?sig=rechteck">Fourier-Reihe</a>.
+          <details>
+            <summary>Lösung</summary>
+            <p>
+              Nur ungerade k (1, 3, 5, …) kommen vor, und ihre Amplituden fallen mit 1/k ab: etwa 124, 41, 25,
+              … (Sprunghöhe 195, also 4/(πk) · 195/2). Im logarithmischen Spektrum sinken die Balken nur
+              langsam. Das ist genau das Betragsspektrum des Rechtecks aus der Fourier-Reihe, denn die FFT sieht
+              die Zeile als eine Periode: dunkel, hell und am Ende wieder ein Sprung zurück auf dunkel. Harte
+              Kanten brauchen also viele hohe Frequenzen. Der weiche „Verlauf“ fällt dagegen mit 1/k² viel
+              schneller ab.
+            </p>
+          </details>
+        </li>
+        <li>
+          Wähle „Foto“ und schiebe die Linie einmal durch den Himmel (ganz oben) und einmal durch Bäume und
+          Häuser. Wie ändert sich das Spektrum (logarithmische Skala)?
+          <details>
+            <summary>Lösung</summary>
+            <p id="solution-foto">
+              Im Himmel ist die Zeile fast glatt: Die Balken fallen schnell ab, und praktisch die ganze Energie
+              liegt bei k ≤ 16. Durch Bäume und Fenster schwankt die Helligkeit stark von Pixel zu Pixel: Die
+              hohen Frequenzen sind um mehr als eine Zehnerpotenz größer, und der Anteil bei k ≤ 16 sinkt
+              deutlich. In beiden Fällen fällt das Spektrum aber von links nach rechts ab: Auch im detailreichen
+              Teil steckt die meiste Energie bei tiefen Frequenzen.
+            </p>
+          </details>
+        </li>
+        <li>
+          Lade ein eigenes Bild („Eigenes Bild…“ oder Datei auf das Bild ziehen), z. B. ein Foto einer
+          Textseite und eine Landschaft. Welches hat mehr hohe Frequenzen? Das Bild wird nur in deinem Browser
+          verarbeitet und nicht hochgeladen.
+          <details>
+            <summary>Lösung</summary>
+            <p>
+              Die Textseite: Die Buchstaben sind viele harte Schwarz-Weiß-Kanten, also viel Energie bei hohen
+              Frequenzen. Eine Spalte quer durch die Textzeilen zeigt oft einen Gipfel bei der Zahl der
+              Textzeilen pro Bildhöhe. Eine Landschaft hat große glatte Flächen, ihr Spektrum fällt schneller
+              ab.
+            </p>
+          </details>
+        </li>
+        <li>
+          Stelle beim Foto den Tiefpass (oben) auf die Grenze 16. Wie viel Energie bleibt erhalten, und wie
+          sieht der gefilterte Helligkeitsverlauf aus?
+          <details>
+            <summary>Lösung</summary>
+            <p>
+              Meist bleibt der größte Teil der Energie erhalten (siehe Anzeige unter dem Bild), obwohl nur 16
+              von 256 Frequenzen übrig sind. Der rote, gefilterte Verlauf folgt dem groben Verlauf des Originals,
+              nur die feinen Zacken fehlen: Das Bild würde unscharf, aber nicht unkenntlich. So spart
+              verlustbehaftete Kompression Speicher.
+            </p>
+          </details>
+        </li>
+      </ol>
+
+      <h2>Quelle / Idee</h2>
+      <p class="source">
+        Idee nach dem Java-Applet „1D Fast Fourier Transform“ von A. van Dam und D. L. Gould, Brown University
+        Exploratories (früher unter
+        www.cs.brown.edu/exploratories/freeSoftware/repository/edu/brown/cs/exploratories/applets/fft1DApp/1d_fast_fourier_transform_guide.html;
+        läuft in heutigen Browsern nicht mehr). Dort zog man eine Abtastlinie über ein Testbild und sah
+        darüber den Verlauf im Ortsbereich und im Frequenzbereich. Neu umgesetzt für die Vorlesung „Grundlagen
+        der Medieninformatik“.
+      </p>
+      <p class="source">
+        Foto: „Château Frontenac, Quebec city, Canada“ von Wilfredo Rafael Rodriguez Hernandez (Wilfredor),
+        Wikimedia Commons,
+        <a href="https://commons.wikimedia.org/wiki/File:Ch%C3%A2teau_Frontenac,_Quebec_city,_Canada.jpg"
+          >commons.wikimedia.org/wiki/File:Château_Frontenac,_Quebec_city,_Canada.jpg</a
+        >, Lizenz <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.de">CC0 1.0</a> (gemeinfrei).
+        Zugeschnitten und auf 512 × 512 Pixel verkleinert.
+      </p>
+    </section>
+  </body>
+</html>
