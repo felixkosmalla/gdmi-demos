@@ -1,0 +1,488 @@
+/*
+ * Shared layout and theme for all GdMI demos.
+ *
+ * Page structure (see demos/_template/index.html):
+ *   main.lecture            projector area, fills the viewport height
+ *     header.lecture-head   back link, title, actions (fullscreen, reset)
+ *     .plots                plot grid (stacked; .plots--row = side by side)
+ *       figure.plot-box > figcaption + .plot (canvas container)
+ *     .controls             essential controls
+ *   section.explain         self-study part below the fold
+ */
+
+/* ---------- Theme ------------------------------------------------------ */
+:root {
+  color-scheme: light;
+
+  --accent: #0066c0;
+  --accent-dark: #004f94;
+  --accent-soft: #e6f0fa;
+
+  --bg: #ffffff;
+  --bg-soft: #f4f6f8;
+  --text: #1b1f24;
+  --text-muted: #5a6370;
+  --border: #d3d8de;
+  --focus: #ff9e1b;
+
+  /* signal roles – keep consistent across demos (plot.ts `roles`) */
+  --c-original: #0066c0;        /* original / input signal */
+  --c-samples: #2b2f36;         /* samples (stems) */
+  --c-reconstruction: #d7301f;  /* reconstruction / approximation */
+  --c-alias: #d7301f;           /* alias components */
+  --c-copy: #8c939d;            /* spectral copies, inactive parts */
+  --c-marker: #6a4c93;          /* marker lines (e.g. Nyquist) */
+  --c-band: rgba(0, 102, 192, 0.1);
+  --c-series-1: #0066c0;
+  --c-series-2: #d7301f;
+  --c-series-3: #2a9d4b;
+  --c-series-4: #e08a00;
+
+  /* plot chrome (read by plot.ts) */
+  --plot-bg: #ffffff;
+  --plot-text: #1b1f24;
+  --plot-axis: #5a6370;
+  --plot-grid: #e4e8ec;
+  --plot-legend-bg: rgba(255, 255, 255, 0.88);
+
+  /* type & spacing; the lecture area scales up on large screens */
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --fs-body: 18px;
+  --fs-lecture: clamp(18px, 0.55vw + 11px, 22px);
+  --fs-title: clamp(22px, 1vw + 14px, 32px);
+  --plot-font-size: clamp(16px, 0.35vw + 11px, 19px);
+  --gap: 12px;
+  --gap-lg: 24px;
+  --radius: 8px;
+  --measure: 70ch; /* readable line length in the self-study part */
+}
+
+/* ---------- Base ------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+a {
+  color: var(--accent);
+}
+
+a:hover {
+  color: var(--accent-dark);
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+}
+
+sub {
+  font-size: 0.75em;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- Lecture area ----------------------------------------------- */
+.lecture {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  height: 100vh;
+  height: 100dvh;
+  min-height: 480px;
+  padding: var(--gap) var(--gap-lg);
+  font-size: var(--fs-lecture);
+  background: var(--bg);
+}
+
+.lecture:fullscreen {
+  height: 100vh;
+  width: 100vw;
+  overflow: auto;
+}
+
+.lecture-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--gap-lg);
+}
+
+.lecture-head h1 {
+  margin: 0;
+  font-size: var(--fs-title);
+  flex: 1 1 auto;
+}
+
+.lecture-head .back {
+  font-size: 0.85em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.lecture-head .back:hover {
+  text-decoration: underline;
+}
+
+.lecture:fullscreen .back {
+  display: none;
+}
+
+.head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Plot grid: by default plots are stacked and share the free height. */
+.plots {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-auto-rows: minmax(0, 1fr);
+  gap: var(--gap);
+}
+
+/* Side by side (e.g. phasor + time plot); set grid-template-columns in the demo if needed. */
+.plots--row {
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+
+.plot-box {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.plot-box > figcaption {
+  font-weight: 600;
+  font-size: 0.9em;
+  margin-bottom: 2px;
+}
+
+/* Canvas container for createPlot(). Its size defines the plot size. */
+.plot {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 120px;
+  min-width: 0;
+  font-size: var(--plot-font-size);
+  font-family: var(--font);
+  touch-action: pan-y;
+}
+
+.plot > canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+/* Use on canvases that are drawn on with the pointer. */
+.plot--draw {
+  touch-action: none;
+  cursor: crosshair;
+}
+
+/* ---------- Controls --------------------------------------------------- */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--gap) var(--gap-lg);
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.control-slider {
+  flex: 1 1 320px;
+  max-width: 640px;
+}
+
+.control-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--gap);
+}
+
+.control-head label,
+.control-label,
+.control-select label {
+  font-weight: 600;
+}
+
+.readout {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.status {
+  margin: 0;
+  font-weight: 600;
+  min-height: 1.5em;
+}
+
+input[type='range'] {
+  width: 100%;
+  height: 32px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.control-toggle {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  user-select: none;
+}
+
+.control-toggle input {
+  width: 1.2em;
+  height: 1.2em;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.swatch {
+  display: inline-block;
+  width: 1.4em;
+  height: 0.35em;
+  border-radius: 2px;
+}
+
+select {
+  font: inherit;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: inherit;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Buttons: .btn from button(), and bare buttons inside choice groups */
+.btn,
+.button-row > button {
+  font: inherit;
+  font-size: 0.95em;
+  padding: 6px 14px;
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.btn:hover,
+.button-row > button:hover {
+  border-color: var(--accent);
+}
+
+.btn-primary,
+.button-row > button[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--accent-dark);
+}
+
+.btn[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---------- Self-study section ----------------------------------------- */
+.explain {
+  max-width: calc(var(--measure) + 2 * var(--gap-lg));
+  margin: 0 auto;
+  padding: var(--gap-lg) var(--gap-lg) 64px;
+}
+
+.explain h2 {
+  margin-top: 1.6em;
+  font-size: 1.5em;
+  color: var(--accent-dark);
+}
+
+.explain .controls {
+  margin: var(--gap) 0;
+  padding: var(--gap);
+  background: var(--bg-soft);
+  border-radius: var(--radius);
+}
+
+.explain li + li {
+  margin-top: 0.4em;
+}
+
+.formula {
+  font-family: 'Cambria Math', 'STIX Two Math', 'Latin Modern Math', Georgia, serif;
+  font-size: 1.1em;
+  text-align: center;
+  margin: 1em 0;
+  overflow-x: auto;
+}
+
+.source {
+  color: var(--text-muted);
+  font-size: 0.9em;
+}
+
+/* ---------- Landing page ----------------------------------------------- */
+.site {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--gap-lg) var(--gap-lg) 64px;
+}
+
+.site h1 {
+  font-size: var(--fs-title);
+  color: var(--accent);
+  margin-bottom: 0.2em;
+}
+
+.deck h2 {
+  font-size: 1.3em;
+  border-bottom: 2px solid var(--accent-soft);
+  padding-bottom: 4px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: var(--gap-lg);
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: block;
+  height: 100%;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--text);
+  background: var(--bg);
+}
+
+.card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(0, 102, 192, 0.15);
+  color: var(--text);
+}
+
+.card h3 {
+  margin: 0 0 6px;
+  color: var(--accent);
+  font-size: 1.15em;
+}
+
+.card p {
+  margin: 0 0 8px;
+}
+
+.card .meta {
+  color: var(--text-muted);
+  font-size: 0.85em;
+  margin: 0;
+}
+
+/* ---------- Narrow screens (phones) ------------------------------------ */
+@media (max-width: 720px) {
+  :root {
+    --gap: 10px;
+    --gap-lg: 16px;
+    --fs-body: 17px;
+    --fs-lecture: 17px;
+    --plot-font-size: 16px;
+  }
+
+  .lecture {
+    height: auto;
+    min-height: 0;
+  }
+
+  .plots,
+  .plots--row {
+    grid-auto-flow: row;
+    grid-auto-rows: auto;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .plot {
+    flex: none;
+    height: 260px;
+  }
+
+  .control,
+  .control-slider {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+}
+
+/* Short laptop/projector screens: tighten vertical spacing */
+@media (max-height: 760px) and (min-width: 721px) {
+  .lecture {
+    gap: 8px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+}

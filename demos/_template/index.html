@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- TODO: title -->
+    <title>Demo-Vorlage – GdMI-Demos</title>
+    <script type="module" src="./main.ts"></script>
+  </head>
+  <body>
+    <!-- Lecture area: fills the screen, only the essential controls. -->
+    <main class="lecture" id="lecture">
+      <header class="lecture-head">
+        <a class="back" href="../">← Alle Demos</a>
+        <h1>Demo-Vorlage</h1>
+        <div class="head-actions" id="head-actions"></div>
+      </header>
+
+      <div class="plots">
+        <figure class="plot-box">
+          <figcaption>Zeitbereich</figcaption>
+          <div class="plot" id="plot-time"></div>
+        </figure>
+      </div>
+
+      <div class="controls" id="controls"></div>
+      <p class="status" id="status" aria-live="polite"></p>
+    </main>
+
+    <!-- Self-study section below the fold. -->
+    <section class="explain">
+      <h2>Erklärung</h2>
+      <p>
+        Kurze Erklärung in der Terminologie der Folien. Hier: ein Sinus
+        x(t) = A · sin(2π · f · t) mit Frequenz f und Amplitude A.
+      </p>
+
+      <h2>Ausprobieren / Aufgaben</h2>
+      <div class="controls" id="extra-controls"></div>
+      <ol>
+        <li>Erste Aufgabe.</li>
+        <li>Zweite Aufgabe.</li>
+        <li>Dritte Aufgabe.</li>
+      </ol>
+
+      <h2>Quelle / Idee</h2>
+      <p class="source">Idee nach: … (Originaldemo, Autor:innen, Institution).</p>
+    </section>
+  </body>
+</html>
