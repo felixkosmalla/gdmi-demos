@@ -34,7 +34,7 @@ Controls in the lecture area:
 - Slider **Abtastrate f_s**: 20–600 Hz, step 1, default **150**.
 - Three toggles **28 Hz / 84 Hz / 140 Hz** (all on by default).
 - A status line in plain German, computed live, e.g. "f_s = 150 Hz < 2 · 140 Hz = 280 Hz → Aliasing: 140 Hz erscheint als 10 Hz, 84 Hz erscheint als 66 Hz". When fine: "f_s ≥ 2 · f_max → Rekonstruktion exakt".
-- Quick buttons: "150 Hz (Folie)", "280 Hz (Grenze)", "400 Hz".
+- Quick buttons: "150 Hz", "280 Hz", "400 Hz" (plain numbers, no "(Folie)"/"(Grenze)" suffix; changed 2026-10-30).
 - Toggle **Spektrum anzeigen** (off by default) shows/hides the spectrum plot.
 
 ## Self-study section

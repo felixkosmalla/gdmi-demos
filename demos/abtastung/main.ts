@@ -253,8 +253,8 @@ function group(label: string, ...children: HTMLElement[]): HTMLElement {
 }
 
 const presets = [
-  { fs: 150, label: '150 Hz (Folie)' },
-  { fs: 280, label: '280 Hz (Grenze)' },
+  { fs: 150, label: '150 Hz' },
+  { fs: 280, label: '280 Hz' },
   { fs: 400, label: '400 Hz' },
 ];
 const presetButtons = presets.map((pr) =>

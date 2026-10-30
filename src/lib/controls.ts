@@ -408,7 +408,7 @@ export interface ButtonOptions {
   title?: string;
 }
 
-/** Plain button (e.g. "150 Hz (Folie)" quick presets or Play/Stop). */
+/** Plain button (e.g. "150 Hz" quick presets or Play/Stop). */
 export function button(o: ButtonOptions): HTMLButtonElement {
   const b = document.createElement('button');
   b.type = 'button';
