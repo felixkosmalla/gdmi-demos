@@ -12,7 +12,7 @@ This directory splits the work into tasks that each fit one session. Read this f
 | 02 | [Demo `abtastung`](02-demo-abtastung.md) | 01 | done |
 | 03 | [Demo `audio-aliasing`](03-demo-audio-aliasing.md) | 01 | done |
 | 04 | [Demo `zeiger`](04-demo-zeiger.md) | 01 | done |
-| 05 | [Demo `fourier-reihe`](05-demo-fourier-reihe.md) | 01 | todo |
+| 05 | [Demo `fourier-reihe`](05-demo-fourier-reihe.md) | 01 | done |
 | 06 | [Demo `scanline-spektrum`](06-demo-scanline-spektrum.md) | 01 | todo |
 | 07 | [Publish to GitHub Pages](07-publish-github-pages.md) | 01 (can run any time after it; rerun is just a push) | done |
 

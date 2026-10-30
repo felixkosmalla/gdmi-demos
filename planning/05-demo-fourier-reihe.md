@@ -85,3 +85,23 @@ Drawn curves are not stored in the URL; they're too long. Optionally offer "Link
 ## Notes / open points
 
 - The slide uses a 2014 screenshot of the JHU applet. A screenshot of this demo (square, N ≈ 9) can replace it. That's the slide maintainers' call.
+
+### Result (session 05, done)
+
+**Files:** `demos/fourier-reihe/index.html`, `main.ts` (UI, plots, drawing, animation, table), `model.ts` (pure: `presetPeriod`, `coefficients`, `paintSegment`, `maxValue`) + `model.test.ts`. `src/demos.ts`: `ready: true`. Root `README.md`: status "online". The shared lib was not changed: `dsp.fourierSeries`/`fourierSynthesize` already use exactly the form above (aₙ ≥ 0, θₙ ∈ [0, 2π), |X| ≈ 0 → amplitude and phase 0; n = 0 holds |a₀| with phase 0 or π).
+
+**Deviation, M = 2048 instead of 512:** a sampled jump gives aₙ = (4/M)·cot(πn/M) instead of 4/(πn). At M = 512 that is 3 % too small at n = 50, so the Gibbs peak read 1,17 at N = 50 and sank slightly from N = 25 to 50 (1,178 → 1,173), against the acceptance criterion. At 2048 the error is 0,2 % and the peak is 1,18 for every N ≥ 9. The cost is negligible (FFT of 2048 values per pointer move).
+
+**Presets:** all odd (start at 0 and rise, like a sine), so phases are exactly 90° or 270°: Rechteck +1/−1 (sample at the jump = 0, the mean, which keeps the sampled period exactly odd → even aₙ are exactly 0), Dreieck peaking at T/4 (phases alternate 270°/90°), Sägezahn as a ramp −1 → +1 over the whole period (jump at the period boundary, all phases 90°), Sinus (a₁ = 1, θ₁ = 270°).
+
+**Layout:** as in `abtastung`, plots on the left (signal over two periods with ticks 0, T/2, T, 3T/2, 2T; spectrum below) and a side panel on the right (signal buttons, "Löschen" only in drawing mode, slider N 0–50, animation button, spectrum view Betrag/Phase/Beide, readout, drawing hint). Row heights 3:2, or 5:3:2,6 with both spectra. Magnitude: bars n ≤ N red, n > N grey and translucent, plus a dashed "N = …" marker at N + ½ (so the split doesn't depend on color alone). Phase: stems in degrees, only for harmonics with aₙ > 0. On short phase plots (both spectra at 1280×720) only 0°/180°/360° are labelled.
+
+**Additions:** the readout has a second line "Größter Wert: Original …, Annäherung …" and for Rechteck/Sägezahn "→ Überschwingen um x % der Sprunghöhe 2" (makes Gibbs readable on the projector: 9 % at N = 50). The coefficient table has a "Frequenz" column (n·f₀) and shows rows 0…N; "–" for θₙ when aₙ = 0; a negative a₀ appears as its magnitude with 180° (explained under the table). Exercises have `<details>` solutions, like `abtastung`.
+
+**Drawing:** pointer events with `setPointerCapture`, `getCoalescedEvents`, `.plot--draw` (`touch-action: none`) on the signal plot. Dragging in any mode copies the current preset into the drawing and switches to `sig=zeichnen`. Both plotted periods paint the same samples (t mod T); strokes are interpolated sample by sample, clamped to ±1,5 (the plot range), and coefficients are recomputed live on every move. The drawing stays in memory while switching presets; "Zurücksetzen" resets only the URL state, not the drawing. On phones the signal plot does not scroll the page (touch-action none).
+
+**Animation:** N = 1 … 50, 700 ms per step below 10, 350 ms below 20, then 150 ms (≈ 13 s). Moving the slider or drawing stops it.
+
+**Verified (headless Chrome via CDP, dev server, 2026-10-30):** `?sig=rechteck&n=9` loads with Rechteck/N = 9, table a₁ = 1,273, a₃ = 0,424, a₅ = 0,255, a₂ = 0 "–", θ = 270°; N = 50 readout 1,18 / 9 %; invalid `?sig=foo&n=999&view=x` → rechteck, n = 50, betrag. Slider steps 30…50 take one frame each (≈ 16 ms). Mouse stroke (sine-like over one period) → a₁ = 0,94 dominant; "Löschen" → all 0; touch stroke (emulated touch events) of a horizontal line → constant (a₀ only). Animation steps and stops; reset → defaults, empty query. Lecture area fits 1280×720 and 1920×1080 without scrolling in all three spectrum views; 390 px (mobile emulation) has no horizontal scroll, plots stack. No console errors (only the site-wide missing `/favicon.ico`). `npm test` (53 tests) and `npm run build` pass. **Not verified:** real touch devices, Safari/Firefox, real fullscreen, a projector.
+
+**Open:** "Link kopieren" with a compressed drawn curve (low priority) is not built. The README link could become `?sig=rechteck&n=9` if the slide screenshot uses N = 9 (maintainers' call).

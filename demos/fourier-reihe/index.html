@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fourier-Reihe: Annäherung &amp; Spektrum – GdMI-Demos</title>
+    <meta name="description" content="Rechteck, Dreieck, Sägezahn oder eine eigene Zeichnung durch Harmonische annähern – mit Betrags- und Phasenspektrum und Gibbs-Phänomen." />
+    <style>
+      /* signal plot large, spectrum below; with both spectra the phase plot is the smallest */
+      #plots {
+        grid-template-rows: minmax(0, 3fr) minmax(0, 2fr);
+      }
+      #plots[data-view='beide'] {
+        grid-template-rows: minmax(0, 5fr) minmax(0, 3fr) minmax(0, 2.6fr);
+      }
+      .readout-big {
+        font-size: 1.15em;
+      }
+      .hint {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 0.85em;
+      }
+      .table-wrap {
+        max-height: 26em;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+      }
+      .coeff-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-variant-numeric: tabular-nums;
+      }
+      .coeff-table th,
+      .coeff-table td {
+        padding: 4px 12px;
+        text-align: right;
+        border-bottom: 1px solid var(--border);
+      }
+      .coeff-table th {
+        position: sticky;
+        top: 0;
+        background: var(--bg-soft);
+      }
+      @media (max-width: 720px) {
+        #plots,
+        #plots[data-view='beide'] {
+          grid-template-rows: none;
+        }
+      }
+    </style>
+    <script type="module" src="./main.ts"></script>
+  </head>
+  <body>
+    <main class="lecture" id="lecture">
+      <header class="lecture-head">
+        <a class="back" href="../">← Alle Demos</a>
+        <h1>Fourier-Reihe: Annäherung &amp; Spektrum</h1>
+        <div class="head-actions" id="head-actions"></div>
+      </header>
+
+      <div class="lecture-split">
+        <div class="plots" id="plots" data-view="betrag">
+          <figure class="plot-box">
+            <figcaption class="caption-row" id="cap-signal"><span>Signal: Original und Annäherung</span></figcaption>
+            <div class="plot plot--draw" id="plot-signal"></div>
+          </figure>
+          <figure class="plot-box" id="box-mag">
+            <figcaption class="caption-row" id="cap-mag"><span>Betragsspektrum a<sub>n</sub></span></figcaption>
+            <div class="plot" id="plot-mag"></div>
+          </figure>
+          <figure class="plot-box" id="box-phase" hidden>
+            <figcaption class="caption-row" id="cap-phase"><span>Phasenspektrum θ<sub>n</sub></span></figcaption>
+            <div class="plot" id="plot-phase"></div>
+          </figure>
+        </div>
+
+        <aside class="side-panel" aria-label="Einstellungen">
+          <div class="controls" id="controls"></div>
+          <p class="status readout-big" id="status" aria-live="polite"></p>
+          <p class="hint" id="hint">
+            Zeichnen: in der oberen Grafik mit Maus oder Finger ziehen. Das ändert eine Periode, die zweite
+            wiederholt sie.
+          </p>
+        </aside>
+      </div>
+    </main>
+
+    <section class="explain">
+      <h2>Erklärung</h2>
+      <p>
+        Ein <strong>periodisches Signal</strong> wiederholt sich nach der Periodendauer T. Seine
+        <strong>Grundfrequenz</strong> ist f<sub>0</sub> = 1/T. Die <strong>Fourier-Reihe</strong> schreibt es
+        als Summe aus einem <strong>Gleichanteil</strong> a<sub>0</sub> und Kosinus-Schwingungen bei den
+        Vielfachen n · f<sub>0</sub>:
+      </p>
+      <p class="formula">
+        x(t) = a<sub>0</sub> + a<sub>1</sub> · cos(2π f<sub>0</sub> t + θ<sub>1</sub>) + a<sub>2</sub> · cos(2π ·
+        2f<sub>0</sub> t + θ<sub>2</sub>) + … + a<sub>N</sub> · cos(2π · N f<sub>0</sub> t + θ<sub>N</sub>)
+      </p>
+      <p>
+        n = 1 ist die <strong>Grundschwingung</strong>, n ≥ 2 sind die <strong>Oberschwingungen</strong>
+        (Harmonische). Die <strong>Koeffizienten</strong> sagen, wie viel von jeder Harmonischen im Signal
+        steckt: a<sub>n</sub> ≥ 0 ist die Amplitude, θ<sub>n</sub> (0 ≤ θ<sub>n</sub> &lt; 360°) die Phase.
+        a<sub>0</sub> ist der Mittelwert des Signals über eine Periode.
+      </p>
+      <p>
+        Das <strong>Betragsspektrum</strong> zeigt a<sub>n</sub> über n, das <strong>Phasenspektrum</strong>
+        θ<sub>n</sub> über n. Bricht man die Summe nach N Harmonischen ab, erhält man eine
+        <strong>Annäherung</strong> (rot), deren höchste Frequenz N · f<sub>0</sub> ist. Im Betragsspektrum
+        sind die Harmonischen oberhalb von N grau: Sie fehlen in der Annäherung.
+      </p>
+      <p>
+        Alle Beispielsignale beginnen bei t = 0 mit dem Wert 0 und steigen an, wie ein Sinus. Ein Sinus ist ein
+        um 90° verschobener Kosinus, sin(x) = cos(x − 90°) = cos(x + 270°). Deshalb haben ihre Harmonischen die
+        Phasen 90° oder 270°.
+      </p>
+      <ul>
+        <li>
+          <strong>Rechteck</strong> (±1): nur <strong>ungerade</strong> Harmonische, a<sub>n</sub> = 4/(πn),
+          also 1,27; 0,42; 0,25; 0,18; … Die geraden a<sub>n</sub> sind 0.
+        </li>
+        <li>
+          <strong>Dreieck</strong> (±1): ebenfalls nur ungerade, aber a<sub>n</sub> = 8/(π²n²), also 0,81;
+          0,09; 0,03; … Die Amplituden fallen mit 1/n² viel schneller ab, deshalb genügen wenige Harmonische.
+        </li>
+        <li><strong>Sägezahn</strong> (±1): alle Harmonischen, a<sub>n</sub> = 2/(πn).</li>
+        <li><strong>Sinus</strong>: nur a<sub>1</sub> = 1. Er ist schon eine einzige Harmonische.</li>
+      </ul>
+      <p>
+        <strong>Sprünge brauchen hohe Frequenzen.</strong> Eine Summe aus Kosinus-Schwingungen ist überall glatt.
+        Einen senkrechten Sprung kann sie nur mit immer mehr, immer schnelleren Harmonischen annähern. Direkt
+        neben dem Sprung schießt die Annäherung über: beim Rechteck auf etwa 1,18, also um etwa 9 % der
+        Sprunghöhe 2. Dieses Überschwingen verschwindet mit größerem N nicht, es wird nur schmaler und rückt
+        näher an den Sprung (<strong>Gibbs-Phänomen</strong>). Genau auf dem Sprung liefert die Reihe den
+        Mittelwert beider Seiten (hier 0).
+      </p>
+      <p>
+        <strong>Zeichnen:</strong> Die Demo speichert eine Periode als 2048 Werte und berechnet die Koeffizienten
+        mit der FFT. Was du zeichnest, wiederholt sich periodisch. Passen Anfang und Ende deiner Zeichnung nicht
+        zusammen, entsteht an der Periodengrenze ein Sprung, mit Gibbs-Überschwingen.
+      </p>
+      <p>
+        <strong>Bezug zu d08 (Zeiger):</strong> Jede Harmonische ist ein drehender Zeiger mit der Länge
+        a<sub>n</sub> und dem Startwinkel θ<sub>n</sub>, der sich n-mal so schnell dreht wie die Grundschwingung.
+        Die Fourier-Reihe hängt diese Zeiger aneinander (siehe Demo
+        <a href="../zeiger/">Schwingungen als Zeiger addieren</a>).
+        <strong>Ausblick Kompression:</strong> Lässt man Harmonische mit kleinem a<sub>n</sub> weg (meist die
+        hohen), ändert sich das Signal kaum, man muss aber viel weniger Zahlen speichern. Diese Idee steckt in
+        verlustbehafteten Verfahren wie JPEG oder MP3.
+      </p>
+
+      <h2>Koeffiziententabelle</h2>
+      <p id="table-caption"></p>
+      <div class="table-wrap">
+        <table class="coeff-table">
+          <thead>
+            <tr>
+              <th scope="col">n</th>
+              <th scope="col">Frequenz</th>
+              <th scope="col">a<sub>n</sub></th>
+              <th scope="col">θ<sub>n</sub></th>
+            </tr>
+          </thead>
+          <tbody id="coeff-rows"></tbody>
+        </table>
+      </div>
+      <p>
+        n = 0 ist der Gleichanteil. Ist a<sub>0</sub> negativ, steht hier sein Betrag mit der Phase 180°
+        (cos 180° = −1). „–“ heißt: Die Harmonische ist nicht enthalten (a<sub>n</sub> = 0), eine Phase gibt es
+        dann nicht.
+      </p>
+
+      <h2>Ausprobieren / Aufgaben</h2>
+      <p>
+        Für die Aufgaben 1–5 „Zeichnen“ wählen, „Löschen“ drücken und eine Periode zeichnen. Prüfe dein Ergebnis
+        im Betragsspektrum (a<sub>0</sub>, a<sub>1</sub>, a<sub>2</sub>, …) oder in der Tabelle.
+      </p>
+      <ol>
+        <li>
+          Zeichne ein Signal mit großem Grundschwingungsanteil, aber kleinem Gleichanteil und kleinen
+          Oberschwingungen.
+          <details>
+            <summary>Lösung</summary>
+            <p>
+              Eine glatte, sinusähnliche Welle um die Nulllinie: einmal hoch, einmal runter pro Periode, gleich
+              viel Fläche über und unter 0. Ende und Anfang sollten zusammenpassen, sonst entsteht ein Sprung.
+            </p>
+          </details>
+        </li>
+        <li>
+          Zeichne ein Signal mit großem Gleichanteil und großer Grundschwingung, aber kleinen Oberschwingungen.
+          <details>
+            <summary>Lösung</summary>
+            <p>Dieselbe glatte Welle wie in Aufgabe 1, aber nach oben verschoben (z. B. zwischen 0,2 und 1,4).</p>
+          </details>
+        </li>
+        <li>
+          Zeichne ein Signal mit kleinem Gleichanteil und kleiner Grundschwingung, aber großer 2. Harmonischer.
+          <details>
+            <summary>Lösung</summary>
+            <p>Zwei vollständige, gleich hohe Wellen pro Periode um die Nulllinie.</p>
+          </details>
+        </li>
+        <li>
+          Zeichne ein Signal mit kleiner Grundschwingung, aber großem Gleichanteil und großer 2. Harmonischer.
+          <details>
+            <summary>Lösung</summary>
+            <p>Die zwei Wellen aus Aufgabe 3, nach oben verschoben.</p>
+          </details>
+        </li>
+        <li>
+          Wie würdest du ein Signal konstruieren, das vor allem die 2., 3. und 4. Harmonische enthält?
+          <details>
+            <summary>Lösung</summary>
+            <p>
+              Addiere (gedanklich) Schwingungen mit 2, 3 und 4 Perioden pro Grundperiode und zeichne die Summe,
+              ohne Verschiebung nach oben oder unten (a<sub>0</sub> ≈ 0). Die Summe hat dann keine Schwingung,
+              die nur einmal pro Periode auf und ab geht. Ein Beispiel: Die Kurve wiederholt sich innerhalb
+              einer Periode fast, aber nicht ganz, zweimal.
+            </p>
+          </details>
+        </li>
+        <li>
+          (Extra) Rechteck vs. Dreieck: Welches Signal kommt mit weniger Harmonischen aus – und warum? Vergleiche
+          bei N = 5.
+          <details>
+            <summary>Lösung</summary>
+            <p>
+              Das Dreieck. Es hat keine Sprünge, nur Knicke. Seine Amplituden fallen mit 1/n² ab
+              (a<sub>5</sub> = 0,03), die des Rechtecks nur mit 1/n (a<sub>5</sub> = 0,25). Bei N = 5 liegt die
+              Annäherung des Dreiecks schon fast auf dem Original, beim Rechteck sieht man deutliche Wellen und das
+              Überschwingen an den Sprüngen.
+            </p>
+          </details>
+        </li>
+      </ol>
+
+      <h2>Quelle / Idee</h2>
+      <p class="source">
+        Idee nach dem Java-Applet „Fourier Series Approximation“ von S. Crutchfield und H. C. Lee, Johns Hopkins
+        University (früher unter pages.jh.edu/~signals/fourier2/index.html; läuft in heutigen Browsern nicht
+        mehr). Die Aufgaben sind eine deutsche Bearbeitung der dortigen Übungen. Ersetzt auch den
+        übergangsweise verlinkten „Fourier graph applet“ von intmath.com. Neu umgesetzt für die Vorlesung
+        „Grundlagen der Medieninformatik“.
+      </p>
+    </section>
+  </body>
+</html>

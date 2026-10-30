@@ -63,7 +63,7 @@ export const demos: DemoInfo[] = [
     deck: 'd09',
     slides: 'Folie 9',
     replaces: '„Fourier Series Approximation“ (S. Crutchfield, H. C. Lee, Johns Hopkins University)',
-    ready: false,
+    ready: true,
   },
   {
     slug: 'scanline-spektrum',
