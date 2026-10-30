@@ -1,7 +1,8 @@
 // Demo "Abtastung & Rekonstruktion" (d07, Folie 26): a signal of 28, 84 and
 // 140 Hz is sampled at f_s. Three plots: samples in the time domain, the
 // sinc reconstruction vs. the original, and the analytic spectrum with its
-// copies at k·f_s ± f, the Nyquist band [0, f_s/2] and the alias lines.
+// copies at k·f_s ± f, the Nyquist band [0, f_s/2] and the alias lines. The
+// spectrum is hidden by default and toggled with `spec`.
 import '../../src/lib/page.css';
 import {
   button,
@@ -35,6 +36,7 @@ const state = urlState({
   a84: 1,
   a140: 1,
   win: 0.1, // visible time window in s
+  spec: false, // show the spectrum plot (hidden by default)
 });
 
 const FS_MIN = 20;
@@ -268,6 +270,7 @@ qs('#controls').append(
     toggle(state, { key: 'c84', label: '84 Hz' }),
     toggle(state, { key: 'c140', label: '140 Hz' }),
   ),
+  group('Ansicht', toggle(state, { key: 'spec', label: 'Spektrum anzeigen' })),
 );
 
 qs('#extra-controls').append(
@@ -336,7 +339,8 @@ function renderStatus(): void {
 
 function render(): void {
   updateBlock();
-  const { fs, win } = state.values;
+  const { fs, win, spec } = state.values;
+  qs('#box-spec').hidden = !spec;
   const y = yLimit();
   const xRange: [number, number] = [0, win * 1000];
   const yTicks = niceTicks(-y, y, 4);

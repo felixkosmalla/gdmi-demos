@@ -39,6 +39,7 @@ Every demo is used in two situations:
 - Public repo **`gdmi-demos`** on the lecturer's **personal GitHub account**, deployed via GitHub Pages.
 - **`slides/` is never committed** (it contains third-party images). It is listed in `.gitignore`.
 - Technology was left to us, with "keep it simple" as the guideline (see below).
+- `abtastung`: the **spectrum plot is hidden by default** and shown with a toggle (URL param `spec`), so the lecture starts in the time domain (2026-10-30, details in [02](02-demo-abtastung.md)).
 
 | Slug | Slide(s) | Replaces |
 |------|----------|----------|

@@ -25,7 +25,7 @@ Teaching points:
 
 ## Lecture view
 
-Three stacked plots sharing a consistent color scheme:
+Three stacked plots sharing a consistent color scheme (the spectrum is **hidden by default**, see the decision under "Notes / open points"):
 1. **Zeitbereich:** original signal (continuous, accent blue) + samples (stems with dots, dark grey). Window ≈ 2–3 periods of the fundamental (period of the sum = 1/28 s ≈ 35.7 ms, so show ~80–100 ms).
 2. **Rekonstruktion:** original (thin, faint) vs. reconstruction from the samples (red). The visible mismatch is the point.
 3. **Spektrum:** magnitude lines of the original components (blue) and their copies at k·f_s ± f (grey, smaller or dashed) for at least k = −2…2, **f_s/2 marked as a vertical line labelled "f_s/2 (Nyquist)"**, and the shaded band [0, f_s/2] that the reconstruction keeps. Components that land in that band as aliases are highlighted in red and labelled with their frequency.
@@ -35,6 +35,7 @@ Controls in the lecture area:
 - Three toggles **28 Hz / 84 Hz / 140 Hz** (all on by default).
 - A status line in plain German, computed live, e.g. "f_s = 150 Hz < 2 · 140 Hz = 280 Hz → Aliasing: 140 Hz erscheint als 10 Hz, 84 Hz erscheint als 66 Hz". When fine: "f_s ≥ 2 · f_max → Rekonstruktion exakt".
 - Quick buttons: "150 Hz (Folie)", "280 Hz (Grenze)", "400 Hz".
+- Toggle **Spektrum anzeigen** (off by default) shows/hides the spectrum plot.
 
 ## Self-study section
 
@@ -55,8 +56,9 @@ Controls in the lecture area:
 | `c28`, `c84`, `c140` | bool | true | component on/off |
 | `a28`, `a84`, `a140` | number | 1 | amplitudes (self-study) |
 | `win` | number | 0.1 | time window in s |
+| `spec` | bool | false | show the spectrum plot |
 
-The slide should link to `…/abtastung/?fs=150`.
+The slide should link to `…/abtastung/?fs=150` (add `&spec=1` to open with the spectrum visible).
 
 ## Math / DSP
 
@@ -73,13 +75,18 @@ The slide should link to `…/abtastung/?fs=150`.
 
 ## Acceptance criteria
 
-- At `?fs=150`: the reconstruction visibly differs from the original; the spectrum shows alias lines at **10 Hz (from 140 Hz)** and **66 Hz (from 84 Hz)** inside [0, 75 Hz]; the status line says so.
+- On first load the spectrum plot is hidden and the two time plots share the height; "Spektrum anzeigen" brings it back, and `spec` survives reload.
+- At `?fs=150`: the reconstruction visibly differs from the original; the spectrum (when shown) has alias lines at **10 Hz (from 140 Hz)** and **66 Hz (from 84 Hz)** inside [0, 75 Hz]; the status line says so.
 - At f_s ≥ 281 Hz the reconstruction overlays the original (no visible difference in the middle of the window).
 - Toggling 140 Hz off makes f_s = 170 Hz sufficient (2·84 = 168).
 - The URL updates while dragging, and reloading restores the state.
 - Readable at 1280×720 without scrolling the lecture area. Works at 390 px width.
 
 ## Notes / open points
+
+### Decision (2026-10-30): spectrum hidden by default
+
+The spectrum plot starts **hidden**. A toggle "Spektrum anzeigen" in the side panel (group "Ansicht") shows it, stored as URL param `spec` (default `false`, so "Zurücksetzen" hides it again). Requested by the lecturer: the demo opens with the two time-domain plots only, and the spectrum is shown when needed. The Erklärung has a section "So liest du das Spektrum" (colors, the f_s = 150 Hz walk-through, simplifications), and exercise 2 points to the toggle. Shared lib: `page.css` got a global `[hidden] { display: none !important; }`, because `.plot-box` sets `display: flex`, which would otherwise override the `hidden` attribute.
 
 - The slide's screenshot of the old applet can be replaced by a screenshot of this demo at f_s = 150 Hz. That's the slide maintainers' call.
 

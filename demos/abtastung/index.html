@@ -25,7 +25,7 @@
             <figcaption class="caption-row" id="cap-rec"><span>Rekonstruktion aus den Abtastwerten</span></figcaption>
             <div class="plot" id="plot-rec"></div>
           </figure>
-          <figure class="plot-box">
+          <figure class="plot-box" id="box-spec" hidden>
             <figcaption class="caption-row" id="cap-spec"><span>Spektrum nach der Abtastung</span></figcaption>
             <div class="plot" id="plot-spec"></div>
           </figure>
@@ -50,8 +50,8 @@
       <p>
         <strong>Spektrum:</strong> Durch die Abtastung wiederholt sich das Spektrum des Originals bei allen
         Vielfachen der Abtastrate. Jede Frequenz f taucht zusätzlich bei k · f<sub>s</sub> ± f auf
-        (k = 1, 2, …). Ein reelles Signal hat Spektrallinien bei +f und −f; die Grafik zeigt nur f ≥ 0,
-        deshalb liegen die grauen Kopien paarweise links und rechts von f<sub>s</sub>, 2 f<sub>s</sub>, …
+        (k = 1, 2, …). Die Spektrum-Grafik ist zunächst ausgeblendet; „Spektrum anzeigen“ blendet sie ein
+        (siehe „So liest du das Spektrum“ unten).
       </p>
       <p>
         <strong>Rekonstruktion:</strong> Ein idealer Tiefpass behält nur den Bereich von 0 bis zur
@@ -90,6 +90,56 @@
         es fehlen zwar hohe Frequenzen, aber es entstehen keine Störfrequenzen.
       </p>
 
+      <h3>So liest du das Spektrum</h3>
+      <p>
+        Die beiden oberen Grafiken zeigen das Signal über der Zeit. Das Spektrum zeigt stattdessen, welche
+        Frequenzen das abgetastete Signal enthält und wie stark sie sind: Die x-Achse ist die Frequenz in Hz,
+        die y-Achse die Amplitude. Jeder Sinusanteil erscheint als eine senkrechte Linie bei seiner Frequenz.
+        Die Demo berechnet die Linien direkt aus den Formeln, nicht mit einer FFT.
+      </p>
+      <ul>
+        <li><strong>Blaue Linien (Original):</strong> die drei Anteile bei 28, 84 und 140 Hz.</li>
+        <li>
+          <strong>Graue, gestrichelte Linien (Kopien):</strong> Die Abtastung wiederholt das Spektrum um jedes
+          Vielfache von f<sub>s</sub>. Jede Frequenz f taucht zusätzlich bei k · f<sub>s</sub> ± f auf.
+          Gepunktete Hilfslinien markieren f<sub>s</sub>, 2 f<sub>s</sub>, …
+        </li>
+        <li>
+          <strong>Hellblau hinterlegter Bereich [0, f<sub>s</sub>/2]:</strong> die Frequenzen, die die
+          Rekonstruktion behält. Sie wirkt wie ein idealer Tiefpass (sinc-Interpolation), alles außerhalb des
+          Bereichs fällt weg.
+        </li>
+        <li>
+          <strong>Gestrichelte Markierung „f<sub>s</sub>/2 (Nyquist)“:</strong> die obere Grenze dieses
+          Bereichs.
+        </li>
+        <li>
+          <strong>Rote Linien (Alias):</strong> Kopien von Anteilen oberhalb von f<sub>s</sub>/2, die im
+          behaltenen Bereich landen. Sie sind mit ihrer Frequenz beschriftet.
+        </li>
+      </ul>
+      <p>
+        <strong>Beispiel f<sub>s</sub> = 150 Hz</strong> (Einstellung der Folie, Nyquist-Frequenz 75 Hz):
+      </p>
+      <ul>
+        <li>28 Hz liegt unter 75 Hz und bleibt erhalten (richtig).</li>
+        <li>84 Hz liegt darüber; seine Kopie bei 150 − 84 = <strong>66 Hz</strong> landet im Bereich (Alias, rot).</li>
+        <li>140 Hz liegt darüber; seine Kopie bei 150 − 140 = <strong>10 Hz</strong> landet im Bereich (Alias, rot).</li>
+      </ul>
+      <p>
+        Die Rekonstruktion enthält also 28, 66 und 10 Hz statt 28, 84 und 140 Hz. Deshalb sieht sie in der
+        mittleren Grafik falsch aus: Das Spektrum erklärt den Fehler, den die Zeitbereichs-Grafiken nur zeigen.
+        Ab f<sub>s</sub> &gt; 280 Hz (2 · 140 Hz) liegen alle Kopien außerhalb des Bereichs. Dann gibt es keine
+        roten Linien, und die Rekonstruktion stimmt mit dem Original überein.
+      </p>
+      <p>
+        <strong>Vereinfachungen der Grafik:</strong> Ein reeller Sinus hat Spektrallinien bei +f und −f. Die
+        Grafik zeigt nur f ≥ 0, deshalb liegen die grauen Kopien paarweise links und rechts von
+        f<sub>s</sub>, 2 f<sub>s</sub>, … Ein Anteil, der genau auf f<sub>s</sub>/2 liegt, wird in voller Höhe
+        gezeichnet, obwohl seine Abtastwerte bei den hier gewählten Sinus-Phasen alle 0 sind (siehe Grenzfall
+        oben). Die Statuszeile weist darauf hin.
+      </p>
+
       <h2>Ausprobieren / Aufgaben</h2>
       <p>Weitere Einstellungen: Amplituden der drei Anteile und die Länge des Zeitfensters.</p>
       <div class="controls" id="extra-controls"></div>
@@ -106,7 +156,8 @@
           </details>
         </li>
         <li>
-          Bei f<sub>s</sub> = 150 Hz: Welche Frequenzen enthält die Rekonstruktion? Prüfe es im Spektrum.
+          Bei f<sub>s</sub> = 150 Hz: Welche Frequenzen enthält die Rekonstruktion? Prüfe es im Spektrum
+          („Spektrum anzeigen“).
           <details>
             <summary>Lösung</summary>
             <p>
