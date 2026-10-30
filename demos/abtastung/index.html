@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Abtastung &amp; Rekonstruktion – GdMI-Demos</title>
+    <meta name="description" content="Abtastung eines Signals aus 28, 84 und 140 Hz: Rekonstruktion, Spektrum mit Kopien und Alias-Frequenzen." />
+    <script type="module" src="./main.ts"></script>
+  </head>
+  <body>
+    <main class="lecture" id="lecture">
+      <header class="lecture-head">
+        <a class="back" href="../">← Alle Demos</a>
+        <h1>Abtastung &amp; Rekonstruktion</h1>
+        <div class="head-actions" id="head-actions"></div>
+      </header>
+
+      <div class="lecture-split">
+        <div class="plots">
+          <figure class="plot-box">
+            <figcaption class="caption-row" id="cap-time"><span id="cap-time-title">Zeitbereich: Abtastung</span></figcaption>
+            <div class="plot" id="plot-time"></div>
+          </figure>
+          <figure class="plot-box">
+            <figcaption class="caption-row" id="cap-rec"><span>Rekonstruktion aus den Abtastwerten</span></figcaption>
+            <div class="plot" id="plot-rec"></div>
+          </figure>
+          <figure class="plot-box">
+            <figcaption class="caption-row" id="cap-spec"><span>Spektrum nach der Abtastung</span></figcaption>
+            <div class="plot" id="plot-spec"></div>
+          </figure>
+        </div>
+
+        <aside class="side-panel" aria-label="Einstellungen">
+          <div class="controls" id="controls"></div>
+          <p class="status" id="status" aria-live="polite"></p>
+        </aside>
+      </div>
+    </main>
+
+    <section class="explain">
+      <h2>Erklärung</h2>
+      <p>
+        <strong>Abtastung</strong> heißt: Der Wert eines kontinuierlichen Signals x(t) wird in festen
+        Zeitabständen T gemessen. Die <strong>Abtastrate</strong> f<sub>s</sub> = 1/T gibt an, wie viele
+        Abtastwerte pro Sekunde entstehen. Das Originalsignal der Folie besteht aus drei überlagerten
+        Frequenzen:
+      </p>
+      <p class="formula">x(t) = sin(2π · 28 Hz · t) + sin(2π · 84 Hz · t) + sin(2π · 140 Hz · t)</p>
+      <p>
+        <strong>Spektrum:</strong> Durch die Abtastung wiederholt sich das Spektrum des Originals bei allen
+        Vielfachen der Abtastrate. Jede Frequenz f taucht zusätzlich bei k · f<sub>s</sub> ± f auf
+        (k = 1, 2, …). Ein reelles Signal hat Spektrallinien bei +f und −f; die Grafik zeigt nur f ≥ 0,
+        deshalb liegen die grauen Kopien paarweise links und rechts von f<sub>s</sub>, 2 f<sub>s</sub>, …
+      </p>
+      <p>
+        <strong>Rekonstruktion:</strong> Ein idealer Tiefpass behält nur den Bereich von 0 bis zur
+        <strong>Nyquist-Frequenz</strong> f<sub>s</sub>/2 (blau hinterlegt) und entfernt alles darüber. Im
+        Zeitbereich entspricht das der sinc-Interpolation: Jeder Abtastwert trägt eine sinc-Funktion bei,
+        </p>
+      <p class="formula">x<sub>r</sub>(t) = Σ<sub>n</sub> x(nT) · sinc(f<sub>s</sub> · (t − nT)),&nbsp;&nbsp; sinc(u) = sin(πu) / (πu).</p>
+      <p>
+        (Die Demo summiert dafür einige Tausend Abtastwerte vor und hinter dem sichtbaren Ausschnitt.)
+      </p>
+      <p>
+        <strong>Abtasttheorem:</strong> Ist f<sub>s</sub> &gt; 2 · f<sub>max</sub>, liegen alle Kopien
+        oberhalb von f<sub>s</sub>/2. Der Tiefpass lässt dann genau das Original übrig, und die
+        Rekonstruktion ist exakt. Für das Beispiel mit f<sub>max</sub> = 140 Hz heißt das
+        f<sub>s</sub> &gt; 280 Hz.
+      </p>
+      <p>
+        <strong>Aliasing:</strong> Ist f<sub>s</sub> &lt; 2 · f<sub>max</sub>, landen Kopien der Anteile
+        oberhalb von f<sub>s</sub>/2 im Bereich [0, f<sub>s</sub>/2] – sie werden an f<sub>s</sub>/2
+        gespiegelt („gefaltet“). Die Rekonstruktion enthält dann diese <strong>Alias-Frequenzen</strong>
+        statt der Originalfrequenzen:
+      </p>
+      <p class="formula">f<sub>alias</sub> = | f − k · f<sub>s</sub> |,&nbsp;&nbsp; k = ganze Zahl, die f / f<sub>s</sub> am nächsten liegt</p>
+      <p>
+        Beispiel der Folie, f<sub>s</sub> = 150 Hz: 140 Hz → |140 − 150| = 10 Hz, 84 Hz → |84 − 150| = 66 Hz,
+        28 Hz bleibt. Also: „Hohe Frequenzanteile fehlen, zusätzliche Störfrequenzen entstehen.“
+      </p>
+      <p>
+        <strong>Grenzfall f<sub>s</sub> = 2 · f:</strong> Bei einem Sinus können die Abtastwerte dann genau
+        in die Nulldurchgänge fallen (probiere 280 Hz: der 140-Hz-Anteil verschwindet ganz). Deshalb verlangt
+        das Abtasttheorem <em>echt größer</em>.
+      </p>
+      <p>
+        <strong>In der Praxis</strong> sitzt vor der Abtastung ein <strong>Anti-Aliasing-Filter</strong>
+        (Tiefpass), der alle Anteile über f<sub>s</sub>/2 entfernt. Dann kann nichts mehr gefaltet werden –
+        es fehlen zwar hohe Frequenzen, aber es entstehen keine Störfrequenzen.
+      </p>
+
+      <h2>Ausprobieren / Aufgaben</h2>
+      <p>Weitere Einstellungen: Amplituden der drei Anteile und die Länge des Zeitfensters.</p>
+      <div class="controls" id="extra-controls"></div>
+      <ol>
+        <li>
+          Suche die kleinste Abtastrate, bei der die Rekonstruktion exakt ist. Warum genau dort?
+          <details>
+            <summary>Lösung</summary>
+            <p>
+              281 Hz (der Regler hat ganzzahlige Schritte): Es muss f<sub>s</sub> &gt; 2 · 140 Hz = 280 Hz
+              gelten. Bei genau 280 Hz liegen die Abtastwerte des 140-Hz-Anteils in seinen Nulldurchgängen,
+              der Anteil fehlt in der Rekonstruktion.
+            </p>
+          </details>
+        </li>
+        <li>
+          Bei f<sub>s</sub> = 150 Hz: Welche Frequenzen enthält die Rekonstruktion? Prüfe es im Spektrum.
+          <details>
+            <summary>Lösung</summary>
+            <p>
+              28 Hz (unverändert), 66 Hz (Alias von 84 Hz) und 10 Hz (Alias von 140 Hz). 84 Hz und 140 Hz
+              selbst fehlen – sie liegen außerhalb von [0, 75 Hz]. Die 10-Hz-Schwingung ist als langsames
+              „Wandern“ der Rekonstruktion zu sehen.
+            </p>
+          </details>
+        </li>
+        <li>
+          Schalte den 140-Hz-Anteil aus. Welche Abtastrate genügt jetzt?
+          <details>
+            <summary>Lösung</summary>
+            <p>Jetzt ist f<sub>max</sub> = 84 Hz, also genügt f<sub>s</sub> &gt; 168 Hz, z. B. 170 Hz.</p>
+          </details>
+        </li>
+        <li>
+          Stelle f<sub>s</sub> = 56 Hz ein. Was zeigen die Abtastwerte, und warum? Vergleiche mit 57 Hz:
+          Warum sieht die Rekonstruktion dort „fast richtig“ aus?
+          <details>
+            <summary>Lösung</summary>
+            <p>
+              Bei 56 Hz ist f<sub>s</sub>/2 = 28 Hz. Alle drei Frequenzen sind ungerade Vielfache davon
+              (28 = 1 · 28, 84 = 3 · 28, 140 = 5 · 28), alle Abtastwerte fallen in Nulldurchgänge: Sie sind 0,
+              die Rekonstruktion ist eine Nulllinie. Bei 57 Hz bleibt 28 Hz knapp unter f<sub>s</sub>/2 = 28,5 Hz,
+              84 Hz wird zu 27 Hz und 140 Hz zu 26 Hz. Die Rekonstruktion ist eine glatte Schwingung mit etwa der
+              Grundfrequenz – plausibel, aber falsch: Die Form des Originals (84 Hz und 140 Hz) ist verloren.
+            </p>
+          </details>
+        </li>
+        <li>
+          Verändere bei f<sub>s</sub> = 150 Hz die Amplitude des 140-Hz-Anteils. Welche Linie im Spektrum
+          ändert sich mit, und was passiert mit der Rekonstruktion?
+          <details>
+            <summary>Lösung</summary>
+            <p>
+              Die Linie bei 140 Hz, alle ihre Kopien und die rote Alias-Linie bei 10 Hz wachsen bzw. schrumpfen
+              gemeinsam. Mit kleinerer Amplitude wird die langsame 10-Hz-Störung in der Rekonstruktion schwächer.
+            </p>
+          </details>
+        </li>
+      </ol>
+
+      <h2>Quelle / Idee</h2>
+      <p class="source">
+        Idee nach dem Java-Applet „An Introduction to Sampling Theory“ von T. Zawistowski und P. Shah,
+        University of Houston (früher unter www2.egr.uh.edu/~glover/applets/Sampling/Sampling.html; läuft in
+        heutigen Browsern nicht mehr). Neu umgesetzt für die Vorlesung „Grundlagen der Medieninformatik“.
+      </p>
+    </section>
+  </body>
+</html>

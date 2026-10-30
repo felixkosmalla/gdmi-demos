@@ -192,6 +192,96 @@ sub {
   margin-bottom: 2px;
 }
 
+/* Caption with an HTML legend next to the title (plot.ts legendElement) */
+.plot-box > figcaption.caption-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--gap-lg);
+}
+
+.legend-inline {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px 18px;
+  font-weight: 400;
+  font-size: 0.92em;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.legend-swatch {
+  width: 1.6em;
+  height: 0.95em;
+  flex: none;
+}
+
+/*
+ * Plots on the left, a control panel on the right (wide screens), so stacked
+ * plots keep the full height. Stacks below 1000 px width.
+ *   main.lecture > header + .lecture-split > (.plots + .side-panel)
+ */
+.lecture-split {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--side-width, clamp(320px, 25vw, 420px));
+  gap: var(--gap) var(--gap-lg);
+}
+
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  min-height: 0;
+  min-width: 0;
+}
+
+.side-panel .controls {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+}
+
+.side-panel .controls > .control {
+  flex: none;
+  max-width: none;
+}
+
+/* Status box variants (text always says what's wrong; color only adds emphasis) */
+.status--ok,
+.status--warn,
+.status--bad {
+  padding: 8px 12px;
+  border-left: 6px solid;
+  border-radius: 4px;
+  background: var(--bg-soft);
+}
+
+.status--ok {
+  border-color: #2a9d4b;
+}
+
+.status--warn {
+  border-color: #e08a00;
+}
+
+.status--bad {
+  border-color: var(--c-alias);
+}
+
+@media (max-width: 1000px) {
+  .lecture-split {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+}
+
 /* Canvas container for createPlot(). Its size defines the plot size. */
 .plot {
   position: relative;
@@ -307,6 +397,11 @@ select {
   gap: 6px;
 }
 
+/* toggles grouped in a row keep their natural width (also on phones) */
+.button-row > .control-toggle {
+  flex: 0 0 auto;
+}
+
 /* Buttons: .btn from button(), and bare buttons inside choice groups */
 .btn,
 .button-row > button {
@@ -382,6 +477,7 @@ select {
 .source {
   color: var(--text-muted);
   font-size: 0.9em;
+  overflow-wrap: anywhere; /* long URLs must not widen the page on phones */
 }
 
 /* ---------- Landing page ----------------------------------------------- */

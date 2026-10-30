@@ -82,3 +82,24 @@ The slide should link to `…/abtastung/?fs=150`.
 ## Notes / open points
 
 - The slide's screenshot of the old applet can be replaced by a screenshot of this demo at f_s = 150 Hz. That's the slide maintainers' call.
+
+### Result (session 02, done)
+
+**Files:** `demos/abtastung/index.html`, `main.ts` (UI, plots, status), `model.ts` (pure math: signal, `sampleBlock`/`reconstruct`, `spectrumLines`, `analyze`, `spectrumMax`) + `model.test.ts` (vitest picks up tests under `demos/` too). `src/demos.ts`: `ready: true`.
+
+**Layout (deviation: controls beside the plots, not below):** the three plots stay stacked, but essential controls + status sit in a right-hand side panel, so each plot gets the full height share (≈ 180 px at 1280×720, ≈ 290 px at 1920×1080). Below 1000 px width the panel moves under the plots. Legends are HTML in the figcaptions instead of in-canvas boxes (short plots, nothing gets covered).
+
+**Shared-lib additions (generic, no API changes):**
+- `plot.ts`: `legendElement(items: LegendItem[])` → HTML legend (inline-SVG swatches, role colors via CSS vars); use with `<figcaption class="caption-row">`.
+- `page.css`: `.lecture-split` (plots | `.side-panel`, side width `--side-width`, default `clamp(320px, 25vw, 420px)`, stacks ≤ 1000 px), `.caption-row`/`.legend-inline`, status variants `.status--ok/--warn/--bad` (colored left border + soft background), `.button-row > .control-toggle` keeps natural width on phones, `.source { overflow-wrap: anywhere }` (a long URL made the phone layout 427 px wide).
+
+**Math notes:**
+- Reconstruction: `sincReconstructUniform` per CSS-pixel column over 3000 samples on each side of the window (not ±1 s): truncation error converges slowly for components just below f_s/2 (140 Hz at 281 Hz: ±1 s gives ≈ 0.1, i.e. visible). With 3000/side the worst error in the window over all f_s ∈ [281, 600] is 0.012 (at 281), without 140 Hz over [169, 600] 0.009 – sub-pixel. Cached per (f_s, window, components, plot width); a slider step redraws within one frame at 1280×720 DPR 2.
+- Spectrum: positive frequencies only (cleaner on a projector; the explanation says so), lines at k·f_s ± f for all k that land in [0, f_max-axis]. Axis fixed 0…450 Hz up to f_s = 290 Hz, then grows in 50-Hz steps (`spectrumMax`) so the copies around f_s stay visible. "Alias" = copy of a component above f_s/2 landing in [0, f_s/2] (inclusive, so f_s = 56 shows 84/140 → 28 Hz in red). Overlapping alias labels are merged ("0, 4, 8 Hz" at f_s = 20). Multiples of f_s are dotted guides, labelled "fₛ", "2fₛ" … while there is room. Canvas labels use the Unicode subscript "ₛ" (renders fine in Chrome/macOS system font).
+- Status: strict theorem (f_s > 2·f_max → exact); f_s = 2·f_max → "Grenzfall" (with sin phases the samples hit the zero crossings, the component vanishes); components with amplitude 0 count as off.
+
+**Exercise 4 adapted:** at f_s = 56 Hz *all* samples are 0 (28, 84, 140 Hz are odd multiples of f_s/2 = 28 Hz), so the "almost right" part is asked at 57 Hz (aliases 27/26 Hz → smooth ~27-Hz wave). A 5th exercise uses the amplitude sliders. Exercises have `<details>` solutions.
+
+**Verified (headless Chrome, dev + preview):** `?fs=150` status/alias lines 10 and 66 Hz; 281 Hz and 170 Hz without 140 Hz overlay (+ numeric sweep above); 280/168 Grenzfall; URL follows slider input (`?fs=160…281` while dragging), toggles/window survive reload; presets set aria-pressed; reset; arrow keys on the slider; lecture area fits 1920×1080 and 1280×720; 390 px (mobile emulation) has no horizontal scroll; no console errors (only the site-wide missing `/favicon.ico` 404). Not verified: real fullscreen, Safari/Firefox, a real projector.
+
+**Open:** spectrum always draws a component at exactly f_s/2 at full height although its samples are 0 for our sine phases (status line explains it). Slide screenshot could be replaced by `?fs=150` (maintainers' call).

@@ -9,7 +9,7 @@ This directory splits the work into tasks that each fit one session. Read this f
 | # | Task | Depends on | Status |
 |---|------|------------|--------|
 | 01 | [Setup & shared library](01-setup-shared-lib.md) | – | done |
-| 02 | [Demo `abtastung`](02-demo-abtastung.md) | 01 | todo |
+| 02 | [Demo `abtastung`](02-demo-abtastung.md) | 01 | done |
 | 03 | [Demo `audio-aliasing`](03-demo-audio-aliasing.md) | 01 | todo |
 | 04 | [Demo `zeiger`](04-demo-zeiger.md) | 01 | todo |
 | 05 | [Demo `fourier-reihe`](05-demo-fourier-reihe.md) | 01 | todo |

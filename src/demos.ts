@@ -36,7 +36,7 @@ export const demos: DemoInfo[] = [
     deck: 'd07',
     slides: 'Folie 26',
     replaces: '„An Introduction to Sampling Theory“ (T. Zawistowski, P. Shah, University of Houston)',
-    ready: false,
+    ready: true,
   },
   {
     slug: 'audio-aliasing',

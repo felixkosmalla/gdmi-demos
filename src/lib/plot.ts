@@ -168,6 +168,56 @@ export interface Plot {
   band(x0: number, x1: number, style?: Style): void;
 }
 
+/**
+ * The same legend as HTML (e.g. inside a `<figcaption>`), so short plots don't
+ * lose data area to an in-canvas legend box. Swatches are small inline SVGs
+ * that use the role colors via CSS variables. Styled by `.legend-inline` in page.css.
+ */
+export function legendElement(items: LegendItem[]): HTMLElement {
+  const NS = 'http://www.w3.org/2000/svg';
+  const css = (c: string): string => (c.startsWith('--') ? `var(${c})` : c);
+  const wrap = document.createElement('span');
+  wrap.className = 'legend-inline';
+  for (const it of items) {
+    const item = document.createElement('span');
+    item.className = 'legend-item';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 28 16');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.classList.add('legend-swatch');
+    const add = (tag: string, attrs: Record<string, string | number>, style: string): void => {
+      const el = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, String(v));
+      el.setAttribute('style', style);
+      svg.append(el);
+    };
+    const c = css(it.color);
+    const w = it.width ?? 2.5;
+    const dash = it.dash ? `stroke-dasharray:${it.dash.join(' ')};` : '';
+    switch (it.kind ?? 'line') {
+      case 'line':
+        add('line', { x1: 0, y1: 8, x2: 28, y2: 8 }, `stroke:${c};stroke-width:${w};${dash}`);
+        break;
+      case 'stem':
+        add('line', { x1: 14, y1: 16, x2: 14, y2: 5 }, `stroke:${c};stroke-width:${w};${dash}`);
+        add('circle', { cx: 14, cy: 5, r: 3.5 }, `fill:${c}`);
+        break;
+      case 'bar':
+        add('rect', { x: 9, y: 2, width: 10, height: 14 }, `fill:${c}`);
+        break;
+      case 'point':
+        add('circle', { cx: 14, cy: 8, r: 4.5 }, `fill:${c}`);
+        break;
+      case 'band':
+        add('rect', { x: 0, y: 1, width: 28, height: 14 }, `fill:${c};stroke:var(--border)`);
+        break;
+    }
+    item.append(svg, it.label);
+    wrap.append(item);
+  }
+  return wrap;
+}
+
 /** Picks a "nice" step (1, 2, 5 × 10^k) so that the range gets at most ~maxTicks ticks. */
 export function niceStep(range: number, maxTicks: number): number {
   const raw = Math.abs(range) / Math.max(1, maxTicks);
