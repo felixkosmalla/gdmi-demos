@@ -33,7 +33,7 @@ Gemeinsame Bausteine liegen in `src/lib/` (Plots, URL-gebundene Regler, DSP, Aud
 | Deck | Folie | Titel | Neue Demo | Ersetzt | Status |
 |------|-------|-------|-----------|---------|--------|
 | d07 | 26 | Beispiel zum Abtasttheorem | [`/gdmi-demos/abtastung/?fs=150`](https://felixkosmalla.github.io/gdmi-demos/abtastung/?fs=150) | UH Glover Sampling-Applet | online |
-| d07 | 27–28 | Aliasing / Audio-Aliasing | [`/gdmi-demos/audio-aliasing/`](https://felixkosmalla.github.io/gdmi-demos/audio-aliasing/) | Berkeley EECS20 Aliasing | in Arbeit |
+| d07 | 27–28 | Aliasing / Audio-Aliasing | [`/gdmi-demos/audio-aliasing/`](https://felixkosmalla.github.io/gdmi-demos/audio-aliasing/) | Berkeley EECS20 Aliasing | online |
 | d08 | 7 | Summieren von Schwingungen | [`/gdmi-demos/zeiger/`](https://felixkosmalla.github.io/gdmi-demos/zeiger/) | schulphysikwiki / JHU Phasoren | in Arbeit |
 | d09 | 9 | Beispiel: Rechteckfunktion | [`/gdmi-demos/fourier-reihe/?sig=rechteck`](https://felixkosmalla.github.io/gdmi-demos/fourier-reihe/?sig=rechteck) | JHU Fourier Series Applet | in Arbeit |
 | d09 | 13 | Frequenzraum bei Bilddaten | [`/gdmi-demos/scanline-spektrum/`](https://felixkosmalla.github.io/gdmi-demos/scanline-spektrum/) | Brown 1D FFT Applet | in Arbeit |

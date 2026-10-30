@@ -420,6 +420,23 @@ export function button(o: ButtonOptions): HTMLButtonElement {
   return b;
 }
 
+/** Labelled row of controls or buttons (e.g. presets, toggles) with role="group". */
+export function group(label: string, ...children: HTMLElement[]): HTMLElement {
+  const wrap = document.createElement('div');
+  wrap.className = 'control';
+  wrap.setAttribute('role', 'group');
+  const l = document.createElement('span');
+  l.className = 'control-label';
+  l.textContent = label;
+  l.id = uid('grp');
+  wrap.setAttribute('aria-labelledby', l.id);
+  const row = document.createElement('div');
+  row.className = 'button-row';
+  row.append(...children);
+  wrap.append(l, row);
+  return wrap;
+}
+
 /**
  * Short "Idee nach: …" line for the lecture area, taken from the demo's
  * `replaces` entry in src/demos.ts. Append it to `#lecture`. The longer

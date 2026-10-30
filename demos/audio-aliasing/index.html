@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Aliasing hören – GdMI-Demos</title>
+    <meta name="description" content="Ein Sinus bei 8 kHz Abtastrate: Über 4 kHz sinkt die hörbare Frequenz wieder. Mit Ton, Sweep und A/B-Vergleich." />
+    <script type="module" src="./main.ts"></script>
+    <style>
+      .main-col {
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap);
+        min-height: 0;
+        min-width: 0;
+      }
+      .main-col .plots {
+        grid-template-rows: minmax(0, 3fr) minmax(0, 2fr);
+      }
+      .main-col > .controls > .control-slider {
+        max-width: none;
+      }
+      .big-readout {
+        margin: 0;
+        font-size: 1.45em;
+        font-weight: 700;
+        line-height: 1.3;
+        font-variant-numeric: tabular-nums;
+      }
+      .readout-box > p {
+        margin: 0;
+      }
+      .readout-box > p + p {
+        margin-top: 4px;
+      }
+      .btn-large {
+        font-size: 1.15em;
+        min-height: 52px;
+      }
+      .hint {
+        margin: 0;
+        font-size: 0.85em;
+        color: var(--text-muted);
+      }
+      @media (max-width: 720px) {
+        .main-col .plots {
+          grid-template-rows: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="lecture" id="lecture">
+      <header class="lecture-head">
+        <a class="back" href="../">← Alle Demos</a>
+        <h1>Aliasing hören</h1>
+        <div class="head-actions" id="head-actions"></div>
+      </header>
+
+      <div class="lecture-split">
+        <div class="main-col">
+          <div class="plots">
+            <figure class="plot-box">
+              <figcaption class="caption-row" id="cap-graph"><span id="cap-graph-title">Wahrgenommene vs. tatsächliche Frequenz</span></figcaption>
+              <div class="plot" id="plot-graph"></div>
+            </figure>
+            <figure class="plot-box">
+              <figcaption class="caption-row" id="cap-time"><span id="cap-time-title">Zeitbereich</span></figcaption>
+              <div class="plot" id="plot-time"></div>
+            </figure>
+          </div>
+          <div class="controls" id="f-control"></div>
+        </div>
+
+        <aside class="side-panel" aria-label="Einstellungen">
+          <div class="readout-box" id="readout">
+            <p class="big-readout" id="readout-f"></p>
+            <p class="big-readout" id="readout-alias"></p>
+            <p id="readout-text"></p>
+          </div>
+          <div class="controls" id="controls"></div>
+          <p class="status" id="status" aria-live="polite"></p>
+        </aside>
+      </div>
+    </main>
+
+    <section class="explain">
+      <h2>Erklärung</h2>
+      <p>
+        Die Demo tastet einen Sinus mit der <strong>Eingangsfrequenz f</strong> mit der
+        <strong>Abtastrate</strong> f<sub>s</sub> = 8000 Hz ab, also 8000 Abtastwerte pro Sekunde:
+      </p>
+      <p class="formula">x[n] = sin(2π · f · n / f<sub>s</sub>),&nbsp;&nbsp; n = 0, 1, 2, …</p>
+      <p>
+        Der Browser spielt genau diese Abtastwerte mit 8 kHz ab. Bei der Wiedergabe wandelt er sie zurück in
+        ein kontinuierliches Signal; dabei wirkt er wie ein Tiefpass, der nur Frequenzen bis zur
+        <strong>Nyquist-Frequenz</strong> f<sub>s</sub>/2 = 4000 Hz durchlässt (Rekonstruktion).
+      </p>
+      <p>
+        <strong>Bis 4 kHz</strong> wird die Frequenz deshalb korrekt wiedergegeben. <strong>Darüber</strong>
+        wird sie an f<sub>s</sub>/2 gespiegelt („gefaltet“): Man hört
+      </p>
+      <p class="formula">
+        f<sub>hörbar</sub> = f &nbsp;für f ≤ f<sub>s</sub>/2,&nbsp;&nbsp;&nbsp;
+        f<sub>hörbar</sub> = f<sub>s</sub> − f &nbsp;für f<sub>s</sub>/2 &lt; f ≤ f<sub>s</sub>
+      </p>
+      <p>
+        Allgemein gilt f<sub>hörbar</sub> = | f − k · f<sub>s</sub> | mit der ganzen Zahl k, die f / f<sub>s</sub>
+        am nächsten liegt. Die hörbare Frequenz überschreitet f<sub>s</sub>/2 also nie – genau das zeigt das
+        Dreieck in der oberen Grafik.
+      </p>
+
+      <h3>Warum klingen 5 kHz und 3 kHz gleich?</h3>
+      <p>Setzt man f = 5000 Hz ein und schreibt 5000 = 8000 − 3000, erhält man für jeden Abtastwert</p>
+      <p class="formula">
+        sin(2π · 5000 · n / 8000) = sin(2π · n − 2π · 3000 · n / 8000) = − sin(2π · 3000 · n / 8000),
+      </p>
+      <p>
+        denn sin(2π · n − α) = − sin α für jede ganze Zahl n. Die Abtastwerte des 5-kHz-Sinus sind also bis aufs
+        Vorzeichen dieselben wie die eines 3-kHz-Sinus. Das Vorzeichen entspricht einer Phasenverschiebung um
+        180° und ist nicht hörbar. Nach der Abtastung lässt sich nicht mehr feststellen, welcher der beiden Sinus
+        es war; die Rekonstruktion wählt die einzige passende Frequenz unter 4 kHz: 3 kHz.
+      </p>
+      <p>
+        Die untere Grafik zeigt das: Der rote 3-kHz-Sinus geht durch dieselben Abtastwerte wie der blasse
+        5-kHz-Sinus (Eingangsfrequenz auf 5000 Hz stellen oder „A/B-Vergleich“ drücken).
+      </p>
+
+      <h3>Das rückwärts drehende Rad im Film</h3>
+      <p>
+        Ein Film nimmt 24 Bilder pro Sekunde auf – er tastet die Bewegung mit 24 Hz ab. Ein Rad mit Speichen sieht
+        nach einer kleinen Drehung wieder gleich aus. Wiederholt sich das Speichenmuster z. B. 23-mal pro Sekunde,
+        dreht es sich von Bild zu Bild um 23/24 einer Wiederholung weiter – das sieht genauso aus wie 1/24
+        zurück. Das Rad scheint sich im Film langsam rückwärts zu drehen (24 − 23 = 1 Wiederholung pro Sekunde,
+        rückwärts). Bei genau 24
+        Wiederholungen pro Sekunde scheint es stillzustehen. Das ist dieselbe Faltung wie beim Ton, nur mit
+        f<sub>s</sub> = 24 Hz.
+      </p>
+
+      <h3>Warum CDs 44,1 kHz verwenden</h3>
+      <p>
+        Menschen hören bis etwa 20 kHz. Nach dem Abtasttheorem braucht man also mehr als 40 kHz. Der Rest bis
+        f<sub>s</sub>/2 = 22,05 kHz ist der Übergangsbereich für das Anti-Aliasing-Filter, das vor der Abtastung
+        alles über 20 kHz entfernen muss – ein reales Filter kann nicht senkrecht abschneiden. (Der genaue Wert
+        44 100 stammt aus der Anfangszeit, als digitales Audio auf Videorekordern gespeichert wurde.)
+      </p>
+
+      <h3>Hinweis zur Technik</h3>
+      <p>
+        Nahe 4 kHz wird der Ton leiser: Der Rekonstruktionstiefpass des Browsers ist nicht ideal, er beginnt schon
+        etwas unterhalb von f<sub>s</sub>/2 zu dämpfen. Die Statuszeile zeigt, wie die Demo den Ton erzeugt. Kann
+        ein Browser nicht mit 8 kHz abspielen, berechnet die Demo stattdessen direkt den Sinus, den eine ideale
+        Rekonstruktion ergäbe – er klingt gleich.
+      </p>
+
+      <h2>Ausprobieren / Aufgaben</h2>
+      <p>
+        Weitere Einstellungen: eine andere Abtastrate. Grafik, Regler, Sweep und A/B-Vergleich passen sich an.
+      </p>
+      <div class="controls" id="extra-controls"></div>
+      <ol>
+        <li>
+          Welche Eingangsfrequenz klingt genauso wie 1 kHz? Finde zwei (eine davon liegt außerhalb des
+          Reglerbereichs – rechne sie aus).
+          <details>
+            <summary>Lösung</summary>
+            <p>
+              7000 Hz (8000 − 1000) und 9000 Hz (8000 + 1000). Allgemein alle k · 8000 Hz ± 1000 Hz, also auch
+              15 000 Hz, 17 000 Hz usw.
+            </p>
+          </details>
+        </li>
+        <li>
+          Sage vorher, welche Frequenz man bei f = 7000 Hz hört. Prüfe es dann mit dem Regler.
+          <details>
+            <summary>Lösung</summary>
+            <p>7000 Hz liegt über f<sub>s</sub>/2 = 4000 Hz, man hört f<sub>s</sub> − f = 8000 − 7000 = 1000 Hz.</p>
+          </details>
+        </li>
+        <li>
+          Warum überschreitet die wahrgenommene Frequenz nie 4 kHz?
+          <details>
+            <summary>Lösung</summary>
+            <p>
+              Zu den Abtastwerten passt für jede Eingangsfrequenz genau eine Frequenz zwischen 0 und
+              f<sub>s</sub>/2 = 4 kHz. Die Rekonstruktion lässt nur Frequenzen bis f<sub>s</sub>/2 durch und
+              gibt deshalb immer diese Frequenz aus. Alles darüber ist nach der Abtastung nicht mehr vom
+              gespiegelten Wert zu unterscheiden.
+            </p>
+          </details>
+        </li>
+        <li>
+          Folie 27 zeigt Moiré-Muster. Wo begegnet dir derselbe Effekt noch?
+          <details>
+            <summary>Lösung</summary>
+            <p>
+              Moiré bei feinen Mustern (Hemden, Gitter) auf Fotos und im Fernsehen, Wagenräder und
+              Hubschrauberrotoren im Video, die stillzustehen oder rückwärts zu laufen scheinen, flackernde
+              Bildschirme oder LED-Lampen in Handyvideos. Jedes Mal wird eine schnelle periodische Änderung zu
+              selten abgetastet (Bildrate, Pixelraster).
+            </p>
+          </details>
+        </li>
+        <li>
+          Stelle die Abtastrate auf 16 kHz. Wo liegt jetzt die Spitze des Dreiecks, und klingen 3 kHz und 5 kHz
+          noch gleich?
+          <details>
+            <summary>Lösung</summary>
+            <p>
+              Die Spitze liegt bei f<sub>s</sub>/2 = 8 kHz. 3 kHz und 5 kHz liegen beide darunter und werden
+              korrekt wiedergegeben. Gleich klingen jetzt z. B. 3 kHz und 13 kHz (16 − 3), das testet der
+              A/B-Vergleich.
+            </p>
+          </details>
+        </li>
+      </ol>
+
+      <h2>Quelle / Idee</h2>
+      <p class="source">
+        Idee nach dem Java-Applet „Aliasing“ aus dem Kurs EECS20 von E. A. Lee und P. Varaiya, UC Berkeley
+        (früher unter ptolemy.berkeley.edu/eecs20/week13/aliasing.html; läuft in heutigen Browsern nicht mehr).
+        Neu umgesetzt für die Vorlesung „Grundlagen der Medieninformatik“.
+      </p>
+    </section>
+  </body>
+</html>

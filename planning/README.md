@@ -10,7 +10,7 @@ This directory splits the work into tasks that each fit one session. Read this f
 |---|------|------------|--------|
 | 01 | [Setup & shared library](01-setup-shared-lib.md) | – | done |
 | 02 | [Demo `abtastung`](02-demo-abtastung.md) | 01 | done |
-| 03 | [Demo `audio-aliasing`](03-demo-audio-aliasing.md) | 01 | todo |
+| 03 | [Demo `audio-aliasing`](03-demo-audio-aliasing.md) | 01 | done |
 | 04 | [Demo `zeiger`](04-demo-zeiger.md) | 01 | todo |
 | 05 | [Demo `fourier-reihe`](05-demo-fourier-reihe.md) | 01 | todo |
 | 06 | [Demo `scanline-spektrum`](06-demo-scanline-spektrum.md) | 01 | todo |
@@ -79,7 +79,7 @@ demos/<slug>/main.ts
 src/demos.ts                  registry: { slug, title, deck, slides, description, replaces, ready }
 src/landing.ts                renders the landing page's demo list (pure function, tested)
 src/lib/plot.ts               HiDPI canvas plotting
-src/lib/controls.ts           labelled controls bound to URL query state
+src/lib/controls.ts           labelled controls bound to URL query state, group(), ideaCredit()
 src/lib/dsp.ts                FFT, Fourier coefficients, sinc reconstruction, aliasing
 src/lib/dsp.test.ts           vitest (also plot.test.ts, landing.test.ts)
 src/lib/audio.ts              Web Audio helpers

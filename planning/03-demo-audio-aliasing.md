@@ -45,6 +45,7 @@ It replaces the Berkeley EECS20 applet (`ptolemy.berkeley.edu/eecs20/week13/alia
 | `f` | number | 1000 | input frequency in Hz |
 | `fs` | number | 8000 | sample rate (only if the optional selector is built) |
 | `vol` | number | 0.2 | volume |
+| `updown` | bool | false | sweep 0 → f_s → 0 instead of 0 → f_s (added in session 03) |
 
 Audio never autoplays from a URL. The user must press Play.
 
@@ -73,4 +74,28 @@ Audio never autoplays from a URL. The user must press Play.
 
 ## Notes / open points
 
-- Browser test results: _(fill in)_.
+### Result (session 03, done)
+
+**Files:** `demos/audio-aliasing/index.html`, `main.ts` (UI, plots, sweep/A/B), `voice.ts` (Web Audio), `aliasing-worklet.ts` (phase accumulator), `model.ts` (pure: `aliasSine`, frequency programs, `aliasProgram`) + `model.test.ts`. `src/demos.ts`: `ready: true`.
+
+**Audio:**
+- Primary: `getAudioContext(fs)` (context at f_s) + `AudioWorkletNode` 'sampled-sine' with an a-rate `frequency` AudioParam. The worklet is loaded via `import url from './aliasing-worklet.ts?worker&url'`. Vite bundles it as a standalone IIFE asset, which `addModule` accepts, in dev and in the build. No extra config was needed.
+- **Deviation, fallback:** if the f_s context throws, runs at another rate, or has no AudioWorklet, a normal context plays an `OscillatorNode` at `aliasFrequency(f, fs)`. That is the ideal reconstruction of a sampled sine, computed directly. The status line says so. The 8-kHz-`AudioBuffer` fallback from the plan was not built: Chrome and Safari resample buffers with linear interpolation (gain sinc²), so at f = 5000 Hz the 5 kHz image would leak through at about −9 dB next to the 3 kHz alias.
+- Chain: source → high-pass 20 Hz (removes the DC a 0-Hz alias leaves, e.g. f = f_s) → voice gain (20 ms fades on start/stop) → `masterGain` (volume). Sources run continuously after the first Play. Stop only fades the gain to 0.
+- Sweep and A/B are "frequency programs" (`FreqPoint[]`): the audio runs them as AudioParam automation (`linearRampToValueAtTime` / `setValueAtTime`), sample-accurate and independent of the main thread. The UI mirrors f from `ctx.currentTime` on every animation frame. In the fallback, ramps are split at multiples of f_s/2 (`aliasProgram`) so the oscillator follows the zigzag. Without sound (error), a program still runs visually on `performance.now()`.
+- Slider and preset changes set f immediately (no glide). With the phase accumulator that is click-free and avoids a chirp through 4 kHz on A/B jumps.
+- Sweep/A/B start the sound if it was off and stop it again at the end. Moving the slider during a program cancels the program and keeps the sound on. The program buttons double as "stop".
+- iOS: `navigator.audioSession.type = 'playback'` (Safari 16.4+) so the silent switch doesn't mute the demo.
+
+**UI (deviations / additions):**
+- Layout as in `abtastung`: plots left (graph 3 : time plot 2), side panel right with the big readout ("f = 5000 Hz / → hörbar: 3000 Hz" plus a status-colored sentence), Play/Stop, Sweep, A/B, volume, hint. The f slider spans the plot column under the plots (800 steps need the width).
+- **A/B button is in the lecture panel**, not only in the self-study part (it's the key moment of slide 28). It plays A = 3000 Hz and B = f_s − 3000 (5000 at 8 kHz, 8025 at 11.025 kHz, 13000 at 16 kHz).
+- The optional f_s selector (8 / 11.025 / 16 kHz, URL `fs`) is built, under "Ausprobieren". Changing it clamps f to f_s, sets the slider max to f_s, and restarts the sound on the new context if playing.
+- Extra URL param `updown` (bool, default false): sweep 0 → f_s → 0 (10 s per direction).
+- Graph axes in kHz (like the slide). Rising segment blue "korrekt", falling segment red "gespiegelt", dashed grey diagonal "ohne Aliasing", band [0, f_s/2], marker with reading lines and an "x Hz" label. Time plot: 20 samples, input sine faint blue, alias sine (with sign, `aliasSine`) red through the samples.
+- Shared lib: `group(label, ...children)` moved from `abtastung/main.ts` to `controls.ts` (both demos use it).
+
+**Browser tests (2026-10-30):**
+- Chrome (headless, CDP; dev server and `vite preview`): worklet mode, `ctx.sampleRate === 8000`. An `AnalyserNode` on the master gain peaks at 1000/3000/3000/1000 Hz for f = 1000/3000/5000/7000. The A/B sequence shows f 3000 → 5000 → 3000 with the readout at 3000 Hz throughout, and the sound stops after 3 s. The sweep follows the automation through the fold. f_s = 16 kHz: 5000 → 5000 Hz, 13000 → 3000 Hz. The forced fallback (constructor with `sampleRate` throws) gives 3000 Hz for f = 5000 and a folded sweep. URL `?f=20000&fs=123` → fs 8000, f clamped to 8000. Layout: 1280×720 and 1920×1080 without scrolling, 390 px with no horizontal scroll. No console errors (only the site-wide missing favicon).
+- Firefox 153 (headless, WebDriver BiDi): worklet mode at 8000 Hz, f = 5000 → peak at 3000 Hz.
+- **Safari: not tested** (WebDriver needs "Allow remote automation" in Safari's developer settings). Also not tested: real speakers or headphones, i.e. how the browsers' output resamplers sound near 4 kHz (expect the tone to get quieter there; the Erklärung mentions it), and phones (including the iOS silent switch).

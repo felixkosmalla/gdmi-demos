@@ -45,7 +45,7 @@ export const demos: DemoInfo[] = [
     deck: 'd07',
     slides: 'Folie 27–28',
     replaces: 'EECS20 „Aliasing“-Applet (E. A. Lee, P. Varaiya, UC Berkeley)',
-    ready: false,
+    ready: true,
   },
   {
     slug: 'zeiger',

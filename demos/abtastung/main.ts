@@ -8,6 +8,7 @@ import {
   button,
   formatNumber,
   fullscreenButton,
+  group,
   ideaCredit,
   qs,
   resetButton,
@@ -236,22 +237,6 @@ qs('#cap-spec').append(
 
 // ---------------------------------------------------------------------------
 // Controls
-
-function group(label: string, ...children: HTMLElement[]): HTMLElement {
-  const wrap = document.createElement('div');
-  wrap.className = 'control';
-  wrap.setAttribute('role', 'group');
-  const l = document.createElement('span');
-  l.className = 'control-label';
-  l.textContent = label;
-  l.id = `grp-${label.replace(/\W+/g, '-').toLowerCase()}`;
-  wrap.setAttribute('aria-labelledby', l.id);
-  const row = document.createElement('div');
-  row.className = 'button-row';
-  row.append(...children);
-  wrap.append(l, row);
-  return wrap;
-}
 
 const presets = [
   { fs: 150, label: '150 Hz' },
