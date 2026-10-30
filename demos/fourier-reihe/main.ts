@@ -41,7 +41,7 @@ const BAR_WIDTH = 0.7;
 // ---------------------------------------------------------------------------
 // Signal data: one sampled period, its coefficients and the line of the original
 
-/** The hand-drawn period. Kept while switching to a preset and back. */
+/** The hand-drawn period. Starting point of a new stroke: a preset is copied here when you draw on it (that overwrites the previous drawing). */
 const drawing = new Float64Array(M);
 const presetCache = new Map<Preset, Float64Array>();
 

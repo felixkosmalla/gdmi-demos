@@ -151,10 +151,11 @@ async function loadFile(file: File): Promise<void> {
     return renderStatus();
   }
   const url = URL.createObjectURL(file); // blob: URL, stays in the browser
+  const token = ++loadToken; // a preset click during the decode supersedes this upload
   try {
     const p = pictureFromImage(await loadImage(url));
+    if (token !== loadToken) return;
     custom = { picture: p, name: file.name };
-    loadToken++;
     message = null;
     setPicture(p);
   } catch {
@@ -498,16 +499,17 @@ function renderPicker(): void {
 }
 
 const lecture = qs('#lecture');
-lecture.addEventListener('dragover', (ev) => {
+// Page-wide, so a file dropped next to the image loads instead of navigating away
+document.addEventListener('dragover', (ev) => {
   if (!ev.dataTransfer?.types.includes('Files')) return;
   ev.preventDefault();
   ev.dataTransfer.dropEffect = 'copy';
   imgWrap.classList.add('dragover');
 });
-lecture.addEventListener('dragleave', (ev) => {
-  if (!lecture.contains(ev.relatedTarget as Node | null)) imgWrap.classList.remove('dragover');
+document.addEventListener('dragleave', (ev) => {
+  if (!document.contains(ev.relatedTarget as Node | null)) imgWrap.classList.remove('dragover');
 });
-lecture.addEventListener('drop', (ev) => {
+document.addEventListener('drop', (ev) => {
   imgWrap.classList.remove('dragover');
   const file = ev.dataTransfer?.files[0];
   if (!file) return;
