@@ -46,3 +46,9 @@ This task **publishes the repository publicly**. Confirm with the user in the se
 
 - If the repo name or account changes, update `base` in `vite.config.ts` and the README URLs.
 - A custom domain (e.g. a university subdomain) is possible later via a `CNAME` file. Not planned now.
+
+### Result (session 07, done)
+
+- Repo: https://github.com/felixkosmalla/gdmi-demos (public), live at https://felixkosmalla.github.io/gdmi-demos/. Code license MIT (`LICENSE`, `package.json`).
+- Pages source is "GitHub Actions". The first deploy run failed at `configure-pages` because it ran before Pages was enabled; a rerun was green. From now on, every push to `main` deploys.
+- The README slide table has a "Status" column. When a demo becomes `ready`, switch its row from "in Arbeit" to "online" in the same commit.
