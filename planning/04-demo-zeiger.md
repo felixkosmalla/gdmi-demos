@@ -83,3 +83,12 @@ Explicit parameters override the preset.
 ## Notes / open points
 
 - Choose the default preset together with the lecturer if there is doubt. "Oberschwingung" is chosen because it shows tip-to-tail addition most clearly.
+
+Implementation notes (2026-10-30, done):
+
+- **Time axis runs backwards from "now":** the time plot's x axis is "vergangene Zeit in s (0 = jetzt)". The current value sits at the left edge, right next to the phasor panel, so the connector is short and the curve "flows out" of the phasor diagram. Ticks don't scroll, which makes measuring the beat period easy when paused. The time plot is computed analytically from the current parameters (no ring buffer), so changing a slider redraws the whole history.
+- **Alignment:** the phasor panel is its own canvas but uses the time plot's y scale and zero line (offset via `getBoundingClientRect`), so the connector meets the current point exactly. `fitColumns()` makes the phasor column about as wide as it is high. On phones (stacked), the phasor panel uses its own scale and the connector is hidden.
+- **Presets and URL:** defaults = the "Oberschwingung" preset. `?preset=x` applies the preset to all keys not in the URL. Changing a parameter by hand (or an explicit URL value that differs from the preset) sets `preset=eigene`. Otherwise a value equal to the default would be dropped from the URL, and the preset's value would come back on reload. Loading `?preset=schwebung` rewrites the URL to the explicit values; that's expected (urlState writes the differences from the defaults).
+- Preset values: Gleiche Frequenz (0,5 Hz, A₂ = 0,8, φ₂ = 60°), Oberschwingung (0,5 + 1 Hz, A₂ = 0,5; f₃ = 1,5 Hz, A₃ = 0,33 for the third pointer), Schwebung (1 + 1,1 Hz, window 20 s → beat period 10 s).
+- Extra: `win` (time window, s) in the URL; Space toggles play/pause; it starts paused if `prefers-reduced-motion` is set; "Schwebung hören" plays 440 + 444 Hz.
+- The time-axis direction and the default preset could be checked with the lecturer.

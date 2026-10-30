@@ -54,7 +54,7 @@ export const demos: DemoInfo[] = [
     deck: 'd08',
     slides: 'Folie 7',
     replaces: 'schulphysikwiki „Überlagerung von harmonischen Schwingungen“; „Harmonic Phasors and Fourier Series“ (W. J. Rugh, Johns Hopkins University)',
-    ready: false,
+    ready: true,
   },
   {
     slug: 'fourier-reihe',
