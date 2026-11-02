@@ -1,8 +1,10 @@
 // Demo "Schwingungen als Zeiger addieren" (d08, Folie 7): two or three
 // rotating pointers attached tip to tail. Left: the phasor diagram with the
-// sum pointer and a fading trail of its tip. Right: the height of the tips
-// over the last seconds (now = left edge), at the same pixel scale, linked by
-// a dashed connector. A demo clock drives play/pause, step and speed.
+// sum pointer and a fading trail of its tip. Right: each pointer's own
+// oscillation (its height, as if it started at the origin) and the height of
+// the sum tip over the last seconds (now = left edge), at the same pixel
+// scale, linked by a dashed connector. A demo clock drives play/pause, step
+// and speed.
 import '../../src/lib/page.css';
 import { getAudioContext, audioSupported, masterGain, rampTo } from '../../src/lib/audio';
 import {
@@ -10,6 +12,7 @@ import {
   formatNumber,
   fullscreenButton,
   group,
+  infoTerm,
   infoTip,
   qs,
   resetButton,
@@ -226,21 +229,41 @@ function arrow(a: [number, number], b: [number, number], color: string, width: n
   pctx.fill();
 }
 
-/** Draws the phasor diagram; returns true if it sits left of the time plot (connector drawn). */
-function drawPhasor(ptrs: Pointer[]): boolean {
+/** Side-by-side layout: the phasor panel sits left of the time plot and shares its y scale. */
+function isLinked(): boolean {
+  return timePlot.canvas.getBoundingClientRect().left >= phasorBox.getBoundingClientRect().right - 1;
+}
+
+/**
+ * Sets the time plot's y range to ±yMax, or wider if the phasor panel is too
+ * narrow for that scale (e.g. tablets in portrait). Both panels keep the same
+ * pixel scale, so the connector stays straight; the time plot just gets more
+ * headroom. Returns true if the range changed.
+ */
+function fitTimeRange(linked: boolean): boolean {
+  let y = yMax;
+  if (linked) {
+    const w = phasorBox.clientWidth - timePlot.fontSize; // room for the grid labels
+    const h = timePlot.area.height;
+    if (w > 0 && h > w) y = (yMax * h) / w;
+  }
+  if (Math.abs(timePlot.options.yRange[1] - y) < 1e-9) return false;
+  timePlot.setOptions({ yRange: [-y, y] });
+  return true;
+}
+
+/** Draws the phasor diagram; with `linked`, at the time plot's scale and zero line (connector drawn). */
+function drawPhasor(ptrs: Pointer[], linked: boolean): void {
   sizePhasorCanvas();
   const col = (c: string): string => timePlot.color(c);
   const fs = timePlot.fontSize;
-  const pr = phasorCanvas.getBoundingClientRect();
-  const tr = timePlot.canvas.getBoundingClientRect();
-  const linked = tr.left >= pr.right - 1;
 
   // scale and origin: in the side-by-side layout identical to the time plot's y axis
   let s: number;
   let cy: number;
   if (linked) {
-    s = timePlot.area.height / (2 * yMax);
-    cy = tr.top - pr.top + timePlot.yToPx(0);
+    s = timePlot.yToPx(0) - timePlot.yToPx(1);
+    cy = timePlot.canvas.getBoundingClientRect().top - phasorCanvas.getBoundingClientRect().top + timePlot.yToPx(0);
   } else {
     s = (Math.min(pw, ph) - fs) / (2 * yMax);
     cy = ph / 2;
@@ -350,7 +373,6 @@ function drawPhasor(ptrs: Pointer[]): boolean {
   pctx.beginPath();
   pctx.arc(tip[0], tip[1], 5, 0, 2 * Math.PI);
   pctx.fill();
-  return linked;
 }
 
 /** Phasor panel about as wide as it is high (side-by-side layout only; phones stack via page.css). */
@@ -366,6 +388,20 @@ const ro = new ResizeObserver(() => {
 ro.observe(plotsEl);
 ro.observe(phasorBox);
 
+// A new devicePixelRatio (window moved to a projector) resizes no element, and
+// the time plot's own redraw would drop the "now" dot: redraw everything.
+let dprQuery: MediaQueryList | undefined;
+function watchDpr(): void {
+  dprQuery?.removeEventListener('change', onDprChange);
+  dprQuery = matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+  dprQuery.addEventListener('change', onDprChange);
+}
+function onDprChange(): void {
+  watchDpr();
+  requestDraw();
+}
+watchDpr();
+
 // ---------------------------------------------------------------------------
 // Controls
 
@@ -375,8 +411,10 @@ let tText = '';
 
 function drawAll(): void {
   const ptrs = pointers();
+  const linked = isLinked();
   timePlot.drawNow();
-  const linked = drawPhasor(ptrs);
+  if (fitTimeRange(linked)) timePlot.drawNow(); // needs the plot area of the current size
+  drawPhasor(ptrs, linked);
   drawNowMarker(ptrs, linked);
   const text = `t = ${formatNumber(t, 2)} s`;
   if (text !== tText) tReadout.textContent = tText = text;
@@ -408,7 +446,8 @@ const PRESET_TIPS: Partial<Record<PresetName, string>> = {
 };
 const AMP_TIP = 'Amplitude A: Länge des Zeigers, also der größte Ausschlag der Schwingung.';
 const FREQ_TIP = 'Frequenz f: Umdrehungen des Zeigers pro Sekunde (in Hz). Die Periode ist T = 1/f.';
-const PHASE_TIP = 'Phase φ: Startwinkel des Zeigers bei t = 0. Eine andere Phase verschiebt die Schwingung in der Zeit.';
+const PHASE_TIP =
+  'Phase φ: Startwinkel des Zeigers bei t = 0. Ein größeres φ lässt die Schwingung früher ablaufen; im Zeitverlauf hier (rechts = früher) rückt die Kurve dadurch nach rechts.';
 
 qs('#controls').append(
   group(
@@ -581,14 +620,28 @@ function renderStatus(ptrs: Pointer[]): void {
   status.textContent = text;
 }
 
+// caption of the time plot: "Zeitverlauf (?)" + what is plotted (depends on n) + legend
+const TIME_AXIS_TIP =
+  'Ganz links (0) ist jetzt, rechts liegt die Vergangenheit; gegenüber der üblichen t-Achse erscheinen die Kurven daher gespiegelt.';
+const capTerm = infoTerm('Zeitverlauf', '');
+const capTip = capTerm.querySelector('button') as HTMLButtonElement;
+const capWhat = document.createTextNode('');
+const capTitle = document.createElement('span');
+capTitle.append(capTerm, capWhat);
+capTime.replaceChildren(capTitle);
+
 function renderLegend(ptrs: Pointer[]): void {
-  const items: LegendItem[] =
-    ptrs.length === 1
-      ? [{ label: 'Zeiger 1', color: COLORS[0], width: 4 }]
-      : [
-          ...ptrs.map((_, i) => ({ label: `Zeiger ${i + 1}`, color: COLORS[i], dash: DASHES[i], width: 2 })),
-          { label: 'Summe', color: SUM_COLOR, width: 4 },
-        ];
+  const one = ptrs.length === 1;
+  capWhat.data = one ? ' (Höhe der Zeigerspitze)' : ' (Höhe jedes Zeigers und der Summe)';
+  capTip.dataset.info = one
+    ? `Die Höhe der Zeigerspitze, A·sin(2πft + φ). ${TIME_AXIS_TIP}`
+    : `Dünn: jeder Zeiger für sich, A·sin(2πft + φ), als hinge er am Ursprung; dick: die Höhe der Summenspitze. ${TIME_AXIS_TIP}`;
+  const items: LegendItem[] = one
+    ? [{ label: 'Zeiger 1', color: COLORS[0], width: 4 }]
+    : [
+        ...ptrs.map((_, i) => ({ label: `Zeiger ${i + 1}`, color: COLORS[i], dash: DASHES[i], width: 2 })),
+        { label: 'Summe', color: SUM_COLOR, width: 4 },
+      ];
   capTime.querySelector('.legend-inline')?.remove();
   capTime.append(legendElement(items));
 }
@@ -626,7 +679,7 @@ function render(): void {
   const ptrs = pointers();
   const { n, win } = state.values;
   yMax = Math.max(0.5, active(ptrs).reduce((s, ptr) => s + ptr.a, 0)) * 1.12;
-  timePlot.setOptions({ xRange: [0, win], yRange: [-yMax, yMax] });
+  timePlot.setOptions({ xRange: [0, win] }); // y range: fitTimeRange() in drawAll()
   pointerRows[1].hidden = n < 2;
   pointerRows[2].hidden = n < 3;
   if (n !== legendN) {
