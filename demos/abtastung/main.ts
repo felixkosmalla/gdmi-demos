@@ -9,7 +9,6 @@ import {
   formatNumber,
   fullscreenButton,
   group,
-  ideaCredit,
   qs,
   resetButton,
   slider,
@@ -248,7 +247,8 @@ const presetButtons = presets.map((pr) =>
 );
 
 qs('#controls').append(
-  slider(state, { key: 'fs', label: 'Abtastrate', symbol: 'f_s', min: FS_MIN, max: FS_MAX, step: 1, unit: 'Hz' }),
+  slider(state, { key: 'fs', label: 'Abtastrate', symbol: 'f_s', min: FS_MIN, max: FS_MAX, step: 1, unit: 'Hz',
+    info: 'Abtastrate fₛ: Anzahl der Abtastwerte pro Sekunde (Abstand T = 1/fₛ). Exakte Rekonstruktion nur, wenn fₛ größer als das Doppelte der höchsten Signalfrequenz ist; fₛ/2 heißt Nyquist-Frequenz.' }),
   group('Schnellwahl', ...presetButtons),
   group(
     'Frequenzanteile',
@@ -273,7 +273,6 @@ qs('#extra-controls').append(
   }),
 );
 qs('#head-actions').append(fullscreenButton(qs('#lecture')), resetButton(state));
-qs('#lecture').append(ideaCredit('abtastung'));
 
 // ---------------------------------------------------------------------------
 // Status line and caption

@@ -84,6 +84,8 @@ The slide should link to `…/abtastung/?fs=150` (add `&spec=1` to open with the
 
 ## Notes / open points
 
+2026-11-02, on request: "Erklärung" (incl. "So liest du das Spektrum") and "Aufgaben" are commented out in index.html (content kept); the extra controls stay under "Weitere Einstellungen". "Quelle / Idee" moved to the `.sources` line under the h1. Info tip on the f_s slider label.
+
 ### Decision (2026-10-30): spectrum hidden by default
 
 The spectrum plot starts **hidden**. A toggle "Spektrum anzeigen" in the side panel (group "Ansicht") shows it, stored as URL param `spec` (default `false`, so "Zurücksetzen" hides it again). Requested by the lecturer: the demo opens with the two time-domain plots only, and the spectrum is shown when needed. The Erklärung has a section "So liest du das Spektrum" (colors, the f_s = 150 Hz walk-through, simplifications), and exercise 2 points to the toggle. Shared lib: `page.css` got a global `[hidden] { display: none !important; }`, because `.plot-box` sets `display: flex`, which would otherwise override the `hidden` attribute.
