@@ -93,6 +93,22 @@ describe('magnitudeSpectrum', () => {
     expect(mag[20]).toBeCloseTo(1, 10);
     expect(mag[19]).toBeCloseTo(0.5, 10); // Hann main lobe spreads to neighbours
   });
+
+  it('keeps a constant at bin 0 only with a Hann window', () => {
+    const mag = magnitudeSpectrum(new Float64Array(64).fill(-3), { window: 'hann' });
+    expect(mag[0]).toBeCloseTo(3, 10);
+    for (let k = 1; k <= 32; k++) expect(mag[k]).toBeCloseTo(0, 10);
+  });
+
+  it('reports the true mean and no leakage of it with a Hann window', () => {
+    const n = 512;
+    const x = Float64Array.from({ length: n }, (_, i) => 100 + 50 * Math.cos((2 * Math.PI * 20 * i) / n));
+    const mag = magnitudeSpectrum(x, { window: 'hann' });
+    expect(mag[0]).toBeCloseTo(100, 10);
+    expect(mag[1]).toBeCloseTo(0, 10);
+    expect(mag[20]).toBeCloseTo(50, 10);
+    expect(mag[21]).toBeCloseTo(25, 10);
+  });
 });
 
 describe('fourierSeries', () => {

@@ -13,7 +13,7 @@ import {
   peakBin,
   posOfIndex,
 } from './model';
-import { N } from './patterns';
+import { HI, LO, N, STRIPES_COARSE, patternLuminance } from './patterns';
 
 const cosLine = (k: number, a: number, n = N): Float64Array =>
   Float64Array.from({ length: n }, (_, x) => a * Math.cos((2 * Math.PI * k * x) / n));
@@ -70,6 +70,17 @@ describe('spectrum of a line', () => {
     expect(spec[19]).toBeCloseTo(25, 6);
     expect(spec[22]).toBeLessThan(1e-9);
   });
+
+  it('with a Hann window the mean stays at k = 0 (no leak into k = 1)', () => {
+    const constant = lineSpectrum(new Float64Array(N).fill(128), true);
+    expect(constant[0]).toBeCloseTo(128, 9);
+    expect(peakBin(constant)).toBe(-1);
+    const stripes = lineSpectrum(extractLine(patternLuminance('streifen-grob'), N, 'zeile', 0), true);
+    expect(stripes[0]).toBeCloseTo((LO + HI) / 2, 9);
+    expect(stripes[1]).toBeLessThan(1e-9);
+    expect(peakBin(stripes)).toBe(STRIPES_COARSE);
+    expect(peakBin(lineSpectrum(extractLine(patternLuminance('schachbrett'), N, 'zeile', 0), true))).toBe(4);
+  });
 });
 
 describe('lowEnergyShare', () => {
@@ -113,6 +124,7 @@ describe('maxAcAmplitude', () => {
     for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) img[y * n + x] = 50 + y * Math.cos((2 * Math.PI * x) / n);
     expect(maxAcAmplitude(img, n, 'zeile')).toBeCloseTo(n - 1, 9);
     expect(maxAcAmplitude(new Float64Array(n * n).fill(3), n, 'spalte')).toBe(0);
+    expect(maxAcAmplitude(new Float64Array(n * n).fill(3), n, 'spalte', true)).toBeLessThan(1e-9);
   });
 });
 

@@ -108,7 +108,9 @@ export interface SpectrumOptions {
   window?: 'none' | 'hann';
   /**
    * `'amplitude'` (default): scaled so a sine of amplitude A that falls exactly on bin k
-   * gives A at k, and a constant c gives |c| at bin 0. `'raw'`: plain |X[k]|.
+   * gives A at k, and a constant c gives |c| at bin 0 (with a window too: the mean is
+   * removed before windowing and reported at bin 0, so it doesn't leak into bin 1).
+   * `'raw'`: plain |X[k]| of the (windowed) signal.
    */
   scale?: 'amplitude' | 'raw';
 }
@@ -123,12 +125,18 @@ export function magnitudeSpectrum(signal: NumArray, options: SpectrumOptions = {
   if (!isPowerOfTwo(n)) throw new Error(`magnitudeSpectrum: length must be a power of two, got ${n}`);
   const re = new Float64Array(n);
   const im = new Float64Array(n);
+  const raw = options.scale === 'raw';
   let gain = n;
+  let mean = 0;
   if (options.window === 'hann') {
+    if (!raw) {
+      for (let i = 0; i < n; i++) mean += signal[i];
+      mean /= n;
+    }
     const w = hannWindow(n);
     gain = 0;
     for (let i = 0; i < n; i++) {
-      re[i] = signal[i] * w[i];
+      re[i] = (signal[i] - mean) * w[i];
       gain += w[i];
     }
   } else {
@@ -137,12 +145,12 @@ export function magnitudeSpectrum(signal: NumArray, options: SpectrumOptions = {
   fft(re, im);
   const half = n >> 1;
   const out = new Float64Array(half + 1);
-  const raw = options.scale === 'raw';
   for (let k = 0; k <= half; k++) {
     const mag = Math.hypot(re[k], im[k]);
     if (raw) out[k] = mag;
     else out[k] = (k === 0 || k === half ? 1 : 2) * mag / gain;
   }
+  if (options.window === 'hann' && !raw) out[0] = Math.abs(mean);
   return out;
 }
 
