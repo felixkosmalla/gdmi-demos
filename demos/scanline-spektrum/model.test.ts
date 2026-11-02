@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   K_MAX,
   extractLine,
+  keptEnergyShare,
   lineIndex,
   lineSpectrum,
   lowEnergyShare,
@@ -114,6 +115,16 @@ describe('lowpass', () => {
     const same = lowpass(line, K_MAX);
     for (let x = 0; x < N; x++) expect(same[x]).toBeCloseTo(line[x], 9);
   });
+
+  it('keptEnergyShare is the share of the filtered curve, also when the spectrum uses a Hann window', () => {
+    expect(keptEnergyShare(line, lowpass(line, 50))).toBeCloseTo(40 ** 2 / (40 ** 2 + 10 ** 2), 9);
+    // Kante row: the windowed spectrum gives a different share than the low-pass actually keeps
+    const edge = extractLine(patternLuminance('kante'), N, 'zeile', 0);
+    const kept = keptEnergyShare(edge, lowpass(edge, 10));
+    expect(kept).toBeCloseTo(lowEnergyShare(lineSpectrum(edge), 10), 9);
+    expect(Math.abs(kept - lowEnergyShare(lineSpectrum(edge, true), 10))).toBeGreaterThan(0.01);
+    expect(keptEnergyShare(new Float64Array(N).fill(5), new Float64Array(N).fill(5))).toBeNaN();
+  });
 });
 
 describe('maxAcAmplitude', () => {
@@ -154,6 +165,12 @@ describe('ortsfrequenzInfo', () => {
     expect(ortsfrequenzInfo('streifen-grob', 'zeile')).toContain('k = 8');
     expect(ortsfrequenzInfo('foto', 'spalte')).toContain('Bildhöhe');
     expect(ortsfrequenzInfo('foto', 'zeile')).toContain('Bildbreite');
+  });
+  it('explains the odd k of the Kante with the periodic continuation', () => {
+    const tip = ortsfrequenzInfo('kante', 'zeile');
+    expect(tip).toContain('k = 1, 3, 5');
+    expect(tip).toContain('periodisch');
+    expect(tip).toContain('Rechteck');
   });
   it('says a column of stripes is constant', () => {
     expect(ortsfrequenzInfo('streifen-grob', 'spalte')).toContain('nur k = 0');

@@ -20,6 +20,7 @@ import {
   K_LOW,
   K_MAX,
   extractLine,
+  keptEnergyShare,
   lineIndex,
   lineSpectrum,
   lowEnergyShare,
@@ -179,6 +180,8 @@ function setPicture(p: Picture): void {
 let line: Float64Array = new Float64Array(N);
 let spec: Float64Array = new Float64Array(K_MAX + 1);
 let filtered: Float64Array | null = null;
+/** Share of the AC energy kept by the low-pass (NaN while it is off). */
+let tpShare = NaN;
 let mean = 0;
 let peak = -1;
 let acMax = 0;
@@ -192,6 +195,8 @@ function updateLine(): void {
   line = extractLine(picture.lum, N, dir(), index());
   spec = lineSpectrum(line, hann);
   filtered = tp < K_MAX ? lowpass(line, tp) : null;
+  // The low-pass filters the line itself (no window), so its share comes from the filtered curve.
+  tpShare = filtered ? keptEnergyShare(line, filtered) : NaN;
   mean = line.reduce((s, v) => s + v, 0) / N;
   peak = peakBin(spec);
   const key = `${dir()}/${hann}`;
@@ -546,7 +551,11 @@ qs('#extra-controls').append(
     step: 1,
     format: (v) => (v >= K_MAX ? 'aus' : `Grenze ${v}`),
   }),
-  toggle(state, { key: 'hann', label: 'Hann-Fenster vor der FFT' }),
+  toggle(state, {
+    key: 'hann',
+    label: 'Hann-Fenster vor der FFT',
+    info: 'Das Hann-Fenster blendet die Linie zu beiden Enden hin weich aus. Passt ein Muster nicht ganzzahlig oft in die Linie, verschmiert seine Energie sonst über viele k (Leck-Effekt); mit Fenster bleibt sie nah am Gipfel, dafür wird jeder Gipfel breiter. Der Tiefpass filtert weiter die Linie ohne Fenster.',
+  }),
 );
 
 const reset = button({
@@ -623,8 +632,9 @@ function renderStatus(): void {
   }
   stFlat.hidden = peak >= 0;
   stPeak.hidden = stEnergy.hidden = peak < 0;
-  const tp = state.values.tp;
-  const showTp = peak >= 0 && tp < K_MAX && tp !== K_LOW;
+  const { tp, hann } = state.values;
+  // Without a window, "Tiefpass behält k ≤ 16" would repeat the energy line; with Hann the two differ.
+  const showTp = peak >= 0 && tp < K_MAX && (tp !== K_LOW || hann);
   stTp.hidden = !showTp;
   if (peak < 0) return;
   stK.textContent = String(peak);
@@ -632,7 +642,7 @@ function renderStatus(): void {
   stPer.textContent = peak === 1 ? 'Periode' : 'Perioden';
   stAcross.textContent = across();
   stShare.textContent = pct(lowEnergyShare(spec, K_LOW));
-  if (showTp) stTp.textContent = `Tiefpass behält k ≤ ${tp}: ${pct(lowEnergyShare(spec, tp))} der Energie`;
+  if (showTp) stTp.textContent = `Tiefpass behält k ≤ ${tp}: ${pct(tpShare)} der Energie`;
 }
 
 function renderCaption(): void {

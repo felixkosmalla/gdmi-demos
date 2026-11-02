@@ -101,6 +101,25 @@ export function lowpass(line: ArrayLike<number>, cutoff: number): Float64Array {
 }
 
 /**
+ * Share of the line's AC energy (without the mean) that remains in `filtered`,
+ * computed in the spatial domain, so it describes the filtered curve itself,
+ * independent of any window used for the displayed spectrum. NaN for a constant line.
+ */
+export function keptEnergyShare(line: ArrayLike<number>, filtered: ArrayLike<number>): number {
+  const n = line.length;
+  let mean = 0;
+  for (let i = 0; i < n; i++) mean += line[i];
+  mean /= n;
+  let kept = 0;
+  let total = 0;
+  for (let i = 0; i < n; i++) {
+    kept += (filtered[i] - mean) ** 2;
+    total += (line[i] - mean) ** 2;
+  }
+  return total > 1e-12 ? kept / total : NaN;
+}
+
+/**
  * Largest AC amplitude (k ≥ 1) over all rows or all columns of an image. Used as
  * a fixed linear y range per image, so the axis doesn't jump while dragging.
  */
@@ -149,7 +168,12 @@ export function ortsfrequenzInfo(id: ImageId | 'eigenes', dir: Direction): strin
     case 'verlauf':
       return def + 'Der weiche Verlauf ändert sich langsam: Es kommen fast nur kleine k vor.';
     case 'kante':
-      return def + 'Die Kante enthält viele Frequenzen (k = 1, 3, 5, …), die mit wachsendem k schwächer werden.';
+      return (
+        def +
+        'Die FFT behandelt die Zeile als periodisch: Nach dem letzten Pixel kommt wieder das erste, dort springt die Helligkeit zurück auf dunkel. ' +
+        'Mit diesem zweiten Sprung wird die Zeile zum Rechtecksignal: nur k = 1, 3, 5, …, mit Amplituden, die wie 1/k abfallen. ' +
+        'Den gleichen 1/k-Anteil bekommt jede Fotozeile, deren Anfang und Ende verschieden hell sind.'
+      );
     default: // foto, eigenes
       return def + 'Glatte Flächen ergeben kleine k, feine Details und Kanten große k.';
   }
