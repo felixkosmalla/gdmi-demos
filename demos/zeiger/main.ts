@@ -548,16 +548,21 @@ const formulaNote = qs('#formula-note');
 
 const hz = (f: number): string => `${formatNumber(f, 2).replace(/,?0+$/, '')} Hz`;
 const num = (v: number): string => formatNumber(v, 2);
+const SUB = ['₁', '₂', '₃'];
+const sine = (ptr: Pointer): string => `A = ${num(ptr.a)}, f = ${hz(ptr.f)}, φ = ${formatNumber(ptr.p)}°`;
 
 function renderStatus(ptrs: Pointer[]): void {
   const eq = equalFrequencySum(ptrs);
   const act = active(ptrs);
   let text: string;
   if (act.length === 0) {
-    text = 'Alle Amplituden sind 0.';
+    text = ptrs.length === 1 ? 'A = 0: Der Zeiger hat die Länge 0, es gibt keine Schwingung.' : 'Alle Amplituden sind 0: Die Summe ist 0.';
   } else if (ptrs.length === 1) {
-    const [ptr] = ptrs;
-    text = `Ein Zeiger: Sinus mit A = ${num(ptr.a)}, f = ${hz(ptr.f)}, φ = ${formatNumber(ptr.p)}° (Periode ${formatNumber(1 / ptr.f, 2)} s).`;
+    text = `Ein Zeiger: Sinus mit ${sine(ptrs[0])} (Periode ${formatNumber(1 / ptrs[0].f, 2)} s).`;
+  } else if (act.length === 1) {
+    // pointers of length 0 add nothing, whatever their frequency
+    const zeros = ptrs.flatMap((ptr, i) => (ptr.a > 0 ? [] : [`A${SUB[i]}`])).join(' = ');
+    text = `Nur Zeiger ${ptrs.indexOf(act[0]) + 1} trägt bei (${zeros} = 0): Die Summe ist sein Sinus mit ${sine(act[0])}.`;
   } else if (eq && eq.a < 0.005) {
     text = 'Gleiche Frequenz, die Zeiger heben sich auf: Die Summe ist 0.';
   } else if (eq) {
@@ -568,7 +573,7 @@ function renderStatus(ptrs: Pointer[]): void {
     if (ts) {
       text = `Schwebung: Die Hüllkurve wiederholt sich alle 1/|${hz(act[0].f)} − ${hz(act[1].f)}| = ${formatNumber(ts, 1)} s.`;
     } else if (T) {
-      text = `Verschiedene Frequenzen: kein Sinus, aber periodisch mit T = 1/ggT der Frequenzen = ${formatNumber(T, T % 1 ? 2 : 0)} s.`;
+      text = `Verschiedene Frequenzen: kein Sinus, aber periodisch mit T = 1/ggT der Frequenzen = ${formatNumber(T, Math.abs(T - Math.round(T)) < 1e-6 ? 0 : 2)} s.`;
     } else {
       text = 'Verschiedene Frequenzen ohne gemeinsames Vielfaches: Die Summe ist nicht periodisch.';
     }
@@ -588,20 +593,32 @@ function renderLegend(ptrs: Pointer[]): void {
   capTime.append(legendElement(items));
 }
 
-function renderFormula(): void {
+function renderFormula(ptrs: Pointer[]): void {
   const { a1, a2, p1, p2, f1, f2, n } = state.values;
   const a = Math.sqrt(Math.max(0, a1 * a1 + a2 * a2 + 2 * a1 * a2 * Math.cos((p1 - p2) * (Math.PI / 180))));
-  formula.textContent =
-    `A = √(${num(a1)}² + ${num(a2)}² + 2 · ${num(a1)} · ${num(a2)} · cos(${formatNumber(p1)}° − ${formatNumber(p2)}°))` +
-    ` = ${num(a)}`;
-  formulaNote.textContent =
-    n === 1
-      ? 'Die Formel braucht zwei Zeiger. Für die Summe „Zeiger: 2“ wählen.'
-      : f1 !== f2
-      ? 'Achtung: Die Formel gilt nur für f₁ = f₂. Bei verschiedenen Frequenzen ändert der Summenzeiger ständig seine Länge.'
-      : n === 3
-        ? 'Die Formel berücksichtigt nur Zeiger 1 und 2. Die Statuszeile oben zeigt die Amplitude aller drei Zeiger.'
-        : 'f₁ = f₂: Das ist die Amplitude der Summe (Länge des Summenzeigers).';
+  // φ₁ − φ₂ with a real minus sign; a negative φ₂ becomes "+ |φ₂|"
+  const d1 = formatNumber(p1).replace('-', '−');
+  const d2 = formatNumber(p2);
+  const diff = d2.startsWith('-') ? `${d1}° + ${d2.slice(1)}°` : `${d1}° − ${d2}°`;
+  formula.textContent = `A = √(${num(a1)}² + ${num(a2)}² + 2 · ${num(a1)} · ${num(a2)} · cos(${diff})) = ${num(a)}`;
+  let note: string;
+  if (n === 1) {
+    note = 'Die Formel braucht zwei Zeiger. Für die Summe „Zeiger: 2“ wählen.';
+  } else if (a1 === 0 || a2 === 0) {
+    note =
+      a1 === a2
+        ? 'A₁ = A₂ = 0: Die Formel ergibt A = 0.'
+        : `A${a1 === 0 ? '₁' : '₂'} = 0: Die Formel ergibt A = A${a1 === 0 ? '₂' : '₁'}, bei jeder Frequenz (ein Zeiger der Länge 0 ändert nichts).`;
+  } else if (f1 !== f2) {
+    note = 'Achtung: Die Formel gilt nur für f₁ = f₂. Bei verschiedenen Frequenzen ändert der Summenzeiger ständig seine Länge.';
+  } else if (n === 2) {
+    note = 'f₁ = f₂: Das ist die Amplitude der Summe (Länge des Summenzeigers).';
+  } else if (equalFrequencySum(ptrs)) {
+    note = 'Die Formel berücksichtigt nur Zeiger 1 und 2. Die Statuszeile oben zeigt die Amplitude aller drei Zeiger.';
+  } else {
+    note = 'Die Formel berücksichtigt nur Zeiger 1 und 2. Zeiger 3 hat eine andere Frequenz, die Summe aller drei ist daher kein Sinus.';
+  }
+  formulaNote.textContent = note;
 }
 
 let legendN = 0;
@@ -618,7 +635,7 @@ function render(): void {
   }
   presetButtons.forEach((b, i) => b.setAttribute('aria-pressed', String(Object.keys(PRESETS)[i] === state.values.preset)));
   renderStatus(ptrs);
-  renderFormula();
+  renderFormula(ptrs);
   requestDraw();
 }
 

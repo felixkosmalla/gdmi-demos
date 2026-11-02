@@ -56,13 +56,14 @@ export function active(ptrs: readonly Pointer[]): Pointer[] {
 }
 
 /**
- * If all active pointers have the same frequency, the sum is again a sine:
- * Σ Aₖ·e^{iφₖ} = A·e^{iφ}. Returns its amplitude A and phase φ in degrees
- * (−180, 180], or null if the frequencies differ.
+ * If at least two pointers are active and all active ones have the same
+ * frequency, the sum is again a sine: Σ Aₖ·e^{iφₖ} = A·e^{iφ}. Returns its
+ * amplitude A and phase φ in degrees (−180, 180], or null if the frequencies
+ * differ or fewer than two pointers contribute (then nothing is added).
  */
 export function equalFrequencySum(ptrs: readonly Pointer[]): { a: number; p: number } | null {
   const act = active(ptrs);
-  if (act.length === 0) return { a: 0, p: 0 };
+  if (act.length < 2) return null;
   if (act.some((ptr) => Math.abs(ptr.f - act[0].f) > 1e-9)) return null;
   let x = 0;
   let y = 0;
@@ -82,31 +83,59 @@ function gcd(a: number, b: number): number {
   return a;
 }
 
+/** Largest denominator accepted for a frequency ratio; beyond it the ratio counts as irrational. */
+const MAX_DENOMINATOR = 10000;
+
 /**
- * Period of the summed oscillation, 1 / ggT(f₁, f₂, …), with frequencies on
- * a 0.01 Hz grid. Null if no pointer is active or a frequency is off the grid
- * (then the ratio is treated as irrational: not periodic).
+ * Fraction p/q (q ≤ MAX_DENOMINATOR) equal to x ≥ 1 up to rounding noise,
+ * via the convergents of its continued fraction; null if there is none.
+ */
+function fraction(x: number): [number, number] | null {
+  let [p0, q0, p1, q1] = [0, 1, 1, 0];
+  let y = x;
+  for (;;) {
+    const k = Math.floor(y);
+    [p0, q0, p1, q1] = [p1, q1, k * p1 + p0, k * q1 + q0];
+    if (!(q1 <= MAX_DENOMINATOR)) return null; // also stops on NaN
+    if (Math.abs(x - p1 / q1) <= 1e-9 * x) return [p1, q1];
+    y = 1 / (y - k);
+  }
+}
+
+/**
+ * Period of the summed oscillation, 1 / ggT(f₁, f₂, …), from the exact
+ * ratios of the frequencies (so it also works for values off the slider grid,
+ * e.g. 0,123 Hz and 0,246 Hz from the URL). Null if no pointer is active or
+ * a ratio is irrational (then the sum is not periodic).
  */
 export function commonPeriod(ptrs: readonly Pointer[]): number | null {
   const act = active(ptrs).filter((ptr) => ptr.f > 0);
   if (act.length === 0) return null;
-  let g = 0;
+  // fₖ = f_min · pₖ/qₖ = (f_min/L) · nₖ with L = lcm(qₖ) and integers nₖ = pₖ·L/qₖ
+  const fMin = Math.min(...act.map((ptr) => ptr.f));
+  const ratios: [number, number][] = [];
+  let lcm = 1;
   for (const ptr of act) {
-    const k = Math.round(ptr.f * 100);
-    if (Math.abs(ptr.f * 100 - k) > 1e-6) return null;
-    g = gcd(g, k);
+    const r = fraction(ptr.f / fMin);
+    if (!r) return null;
+    ratios.push(r);
+    lcm = (lcm / gcd(lcm, r[1])) * r[1];
+    if (lcm > MAX_DENOMINATOR) return null;
   }
-  return 100 / g;
+  let g = 0;
+  for (const [p, q] of ratios) g = gcd(g, p * (lcm / q));
+  return lcm / (g * fMin);
 }
 
 /**
- * Beat period 1 / |f₁ − f₂| for exactly two active pointers with close
- * frequencies (|f₁ − f₂| ≤ ¼ of the larger one); otherwise null.
+ * Beat period 1 / |f₁ − f₂| for exactly two active pointers with almost the
+ * same frequency (|f₁ − f₂| ≤ ⅛ of the larger one, i.e. at least about 7
+ * oscillations per beat); otherwise null.
  */
 export function beatPeriod(ptrs: readonly Pointer[]): number | null {
   const act = active(ptrs);
   if (act.length !== 2) return null;
   const df = Math.abs(act[0].f - act[1].f);
-  if (df < 1e-9 || df > 0.25 * Math.max(act[0].f, act[1].f)) return null;
+  if (df < 1e-9 || df > 0.125 * Math.max(act[0].f, act[1].f) + 1e-9) return null;
   return 1 / df;
 }

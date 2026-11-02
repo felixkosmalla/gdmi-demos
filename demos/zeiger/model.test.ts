@@ -31,8 +31,12 @@ describe('zeiger model', () => {
 
   it('different frequencies: no equal-frequency sum', () => {
     expect(equalFrequencySum([{ a: 1, f: 0.5, p: 0 }, { a: 1, f: 1, p: 0 }])).toBeNull();
-    // a pointer with amplitude 0 does not count
-    expect(equalFrequencySum([{ a: 1, f: 0.5, p: 0 }, { a: 0, f: 1, p: 0 }])?.a).toBeCloseTo(1, 9);
+    // a pointer with amplitude 0 does not count …
+    const eq = equalFrequencySum([{ a: 1, f: 0.5, p: 0 }, { a: 0, f: 1, p: 0 }, { a: 1, f: 0.5, p: 90 }]);
+    expect(eq?.a).toBeCloseTo(Math.SQRT2, 9);
+    // … and with fewer than two contributing pointers nothing is added
+    expect(equalFrequencySum([{ a: 1, f: 0.5, p: 0 }, { a: 0, f: 1, p: 0 }])).toBeNull();
+    expect(equalFrequencySum([{ a: 0, f: 0.5, p: 0 }, { a: 0, f: 1, p: 0 }])).toBeNull();
   });
 
   it('chain ends at the sum and starts at the origin', () => {
@@ -52,12 +56,26 @@ describe('zeiger model', () => {
     expect(commonPeriod([{ a: 1, f: 0.5, p: 0 }, { a: 0.5, f: 1, p: 0 }])).toBeCloseTo(2, 9);
     expect(commonPeriod([{ a: 1, f: 1, p: 0 }, { a: 1, f: 1.1, p: 0 }])).toBeCloseTo(10, 9);
     expect(commonPeriod([{ a: 1, f: 0.25, p: 0 }, { a: 1, f: 0.75, p: 0 }, { a: 1, f: 1.25, p: 0 }])).toBeCloseTo(4, 9);
-    expect(commonPeriod([{ a: 1, f: Math.SQRT2, p: 0 }])).toBeNull();
+    expect(commonPeriod([{ a: 1, f: 1, p: 0 }, { a: 1, f: Math.SQRT2, p: 0 }])).toBeNull();
+    expect(commonPeriod([{ a: 1, f: Math.SQRT2, p: 0 }])).toBeCloseTo(Math.SQRT1_2, 9);
+  });
+
+  it('period for frequencies off the 0,05 Hz slider grid (from the URL)', () => {
+    // exact 1:2 ratio → T = 1/f₁
+    expect(commonPeriod([{ a: 1, f: 0.123, p: 0 }, { a: 1, f: 0.246, p: 0 }])).toBeCloseTo(1 / 0.123, 9);
+    // 2:3 → T = 2/f₁
+    expect(commonPeriod([{ a: 1, f: 0.1234, p: 0 }, { a: 1, f: 0.1851, p: 0 }])).toBeCloseTo(2 / 0.1234, 9);
+    expect(commonPeriod([{ a: 1, f: 0.15, p: 0 }, { a: 1, f: 0.1, p: 0 }])).toBeCloseTo(20, 9);
   });
 
   it('beat period 1/|f₁ − f₂| only for close frequencies', () => {
     expect(beatPeriod([{ a: 1, f: 1, p: 0 }, { a: 1, f: 1.1, p: 0 }])).toBeCloseTo(10, 9);
+    expect(beatPeriod([{ a: 1, f: 440, p: 0 }, { a: 1, f: 444, p: 0 }])).toBeCloseTo(0.25, 9);
+    expect(beatPeriod([{ a: 1, f: 1.75, p: 0 }, { a: 1, f: 2, p: 0 }])).toBeCloseTo(4, 9);
     expect(beatPeriod([{ a: 1, f: 0.5, p: 0 }, { a: 1, f: 1, p: 0 }])).toBeNull();
+    // 3:4 is not "almost the same frequency"
+    expect(beatPeriod([{ a: 1, f: 1.5, p: 0 }, { a: 1, f: 2, p: 0 }])).toBeNull();
+    expect(beatPeriod([{ a: 1, f: 1.7, p: 0 }, { a: 1, f: 2, p: 0 }])).toBeNull();
     expect(beatPeriod([{ a: 1, f: 1, p: 0 }, { a: 1, f: 1, p: 0 }])).toBeNull();
   });
 
