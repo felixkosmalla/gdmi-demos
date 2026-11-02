@@ -372,11 +372,14 @@ const spectrumPlot = createPlot(qs('#plot-spectrum'), {
     const { log, tp } = state.values;
     const f = log ? logOf : (v: number): number => v;
     const base = log ? logOf(LOG_MIN) : 0;
-    // Bars are one bin wide (plot.ts draws at least 1 px), so gaps such as the
-    // missing even k of the Kante stay visible. The DC bar and the peak bar get
-    // at least 3 px, so a single peak is visible on a projector, too.
+    // Bars stay inside their own bin (plot.ts draws at least 1 px), so gaps such as
+    // the missing even k of the Kante stay visible. The peak bar gets up to the full
+    // bin, the DC bar at least 3 px, growing only to the left into the empty margin.
     const barWidth = 0.8;
-    const wide = Math.max(barWidth, (3 * (K_MAX + 4)) / p.area.width);
+    const px3 = (3 * (K_MAX + 4)) / p.area.width; // 3 px in bins
+    const peakWidth = Math.min(1, Math.max(barWidth, px3));
+    const dcWidth = Math.min(2.4, Math.max(barWidth, px3));
+    const dcX = (barWidth - dcWidth) / 2; // right edge stays at k = 0.4
     const vals = (from: number, to: number): [number[], number[]] => {
       const k: number[] = [];
       const v: number[] = [];
@@ -394,10 +397,10 @@ const spectrumPlot = createPlot(qs('#plot-spectrum'), {
     } else {
       p.bars(...vals(1, K_MAX), { color: roles.original, barWidth, baseline: base });
     }
-    if (peak > 0) p.bars([peak], [f(spec[peak])], { color: colorOf(peak), barWidth: wide, baseline: base });
+    if (peak > 0) p.bars([peak], [f(spec[peak])], { color: colorOf(peak), barWidth: peakWidth, baseline: base });
     // DC bar, clipped at the top in the linear scale (its value is written next to it)
     const yTop = p.options.yRange[1];
-    p.bars([0], [f(spec[0])], { color: roles.samples, barWidth: wide, baseline: base });
+    p.bars([dcX], [f(spec[0])], { color: roles.samples, barWidth: dcWidth, baseline: base });
     if (f(spec[0]) > yTop) {
       p.text(0, yTop, `k = 0: ${formatNumber(spec[0])} ↑`, { dx: 10, dy: 4, baseline: 'top', background: true });
     }
