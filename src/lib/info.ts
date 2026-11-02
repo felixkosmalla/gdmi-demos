@@ -143,6 +143,17 @@ let closeTimer: ReturnType<typeof setTimeout> | undefined;
 /** Button that received pointerdown: its focus comes from the click, which handles opening. */
 let pressed: HTMLButtonElement | null = null;
 let rafId = 0;
+/**
+ * Watches the DOM only while a tip is open: closes it as soon as its button is
+ * removed (demos re-render readouts) and follows layout shifts otherwise.
+ */
+let observer: MutationObserver | undefined;
+
+function onMutation(): void {
+  if (!openBtn) return;
+  if (!openBtn.isConnected) close();
+  else schedulePosition();
+}
 
 type WebkitDoc = Document & { webkitFullscreenElement?: Element | null };
 
@@ -191,6 +202,8 @@ function open(b: HTMLButtonElement, pin: boolean): void {
   openBtn = b;
   b.dataset.open = '';
   b.setAttribute('aria-describedby', POPUP_ID);
+  observer ??= new MutationObserver(onMutation);
+  observer.observe(document.body, { childList: true, subtree: true, characterData: true });
   position();
 }
 
@@ -202,6 +215,7 @@ function close(): void {
   openBtn = null;
   pinned = false;
   if (popup) popup.hidden = true;
+  observer?.disconnect();
 }
 
 function scheduleClose(): void {
@@ -263,6 +277,13 @@ function install(): void {
     },
     true,
   );
+  // A press that ends without a click (dragged away) must not swallow the next keyboard focus.
+  // (Touch focuses after pointerup; focusin then opens and the click pins, so the tip still opens.)
+  const release = (): void => {
+    pressed = null;
+  };
+  doc.addEventListener('pointerup', release, true);
+  doc.addEventListener('pointercancel', release, true);
   doc.addEventListener('click', (e) => {
     const b = tipButton(e.target);
     pressed = null;
