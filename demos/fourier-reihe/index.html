@@ -58,6 +58,10 @@
         <a class="back" href="../">← Alle Demos</a>
         <h1>Fourier-Reihe: Annäherung &amp; Spektrum</h1>
         <div class="head-actions" id="head-actions"></div>
+        <p class="sources">
+          Quelle / Idee: Java-Applet „Fourier Series Approximation“ von S. Crutchfield und H. C. Lee, Johns Hopkins
+          University (früher unter pages.jh.edu/~signals/fourier2/index.html; läuft in heutigen Browsern nicht mehr).
+        </p>
       </header>
 
       <div class="lecture-split">
@@ -67,11 +71,11 @@
             <div class="plot plot--draw" id="plot-signal"></div>
           </figure>
           <figure class="plot-box" id="box-mag">
-            <figcaption class="caption-row" id="cap-mag"><span>Betragsspektrum a<sub>n</sub></span></figcaption>
+            <figcaption class="caption-row" id="cap-mag"><span><span data-info="Balken bei n: Amplitude aₙ (≥ 0) der Schwingung mit n·f₀; n = 0 ist der Gleichanteil.">Betragsspektrum</span> a<sub>n</sub></span></figcaption>
             <div class="plot" id="plot-mag"></div>
           </figure>
           <figure class="plot-box" id="box-phase" hidden>
-            <figcaption class="caption-row" id="cap-phase"><span>Phasenspektrum θ<sub>n</sub></span></figcaption>
+            <figcaption class="caption-row" id="cap-phase"><span><span data-info="Phasenspektrum: Die Phase θₙ (0° bis 360°) jeder Harmonischen über n, also um wie viel die Kosinus-Schwingung mit n·f₀ verschoben ist.">Phasenspektrum</span> θ<sub>n</sub></span></figcaption>
             <div class="plot" id="plot-phase"></div>
           </figure>
         </div>
@@ -88,6 +92,7 @@
     </main>
 
     <section class="explain">
+      <!-- Auf Wunsch ausgeblendet (2026-11-02): Erklärung
       <h2>Erklärung</h2>
       <p>
         Ein <strong>periodisches Signal</strong> wiederholt sich nach der Periodendauer T. Seine
@@ -151,6 +156,7 @@
         verlustbehafteten Verfahren wie JPEG oder MP3.
       </p>
 
+      -->
       <h2>Koeffiziententabelle</h2>
       <p id="table-caption"></p>
       <div class="table-wrap">
@@ -172,6 +178,7 @@
         dann nicht.
       </p>
 
+      <!-- Auf Wunsch ausgeblendet (2026-11-02): Aufgaben. Die Aufgaben sind eine deutsche Bearbeitung der Übungen des Original-Applets (Quelle siehe Zeile unter der Überschrift).
       <h2>Ausprobieren / Aufgaben</h2>
       <p>
         Für die Aufgaben 1–5 „Zeichnen“ wählen, „Löschen“ drücken und eine Periode zeichnen. Prüfe dein Ergebnis
@@ -236,15 +243,7 @@
           </details>
         </li>
       </ol>
-
-      <h2>Quelle / Idee</h2>
-      <p class="source">
-        Idee nach dem Java-Applet „Fourier Series Approximation“ von S. Crutchfield und H. C. Lee, Johns Hopkins
-        University (früher unter pages.jh.edu/~signals/fourier2/index.html; läuft in heutigen Browsern nicht
-        mehr). Die Aufgaben sind eine deutsche Bearbeitung der dortigen Übungen. Ersetzt auch den
-        übergangsweise verlinkten „Fourier graph applet“ von intmath.com. Neu umgesetzt für die Vorlesung
-        „Grundlagen der Medieninformatik“.
-      </p>
+      -->
     </section>
   </body>
 </html>

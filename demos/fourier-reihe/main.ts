@@ -9,11 +9,12 @@ import {
   button,
   formatNumber,
   fullscreenButton,
-  ideaCredit,
+  infoTerm,
   qs,
   resetButton,
   select,
   slider,
+  symbolFragment,
   urlState,
 } from '../../src/lib/controls';
 import { createPlot, legendElement, roles } from '../../src/lib/plot';
@@ -249,7 +250,15 @@ const clearBtn = button({
 qs('#controls').append(
   select(state, { key: 'sig', label: 'Signal', options: SIGNALS }),
   clearBtn,
-  slider(state, { key: 'n', label: 'Anzahl Harmonische', symbol: 'N', min: 0, max: N_MAX, step: 1 }),
+  slider(state, {
+    key: 'n',
+    label: 'Anzahl Harmonische',
+    symbol: 'N',
+    min: 0,
+    max: N_MAX,
+    step: 1,
+    info: 'Harmonische: Kosinus-Schwingung mit der Frequenz n·f₀ (n = 1, 2, 3, …). N ist die Zahl der Harmonischen, die in der Annäherung (rot) enthalten sind.',
+  }),
   animBtn,
   select(state, {
     key: 'view',
@@ -263,7 +272,6 @@ qs('#controls').append(
 );
 clearBtn.style.alignSelf = 'flex-start';
 qs('#head-actions').append(fullscreenButton(qs('#lecture')), resetButton(state));
-qs('#lecture').append(ideaCredit('fourier-reihe'));
 
 // ---------------------------------------------------------------------------
 // Readout, coefficient table, rendering
@@ -274,19 +282,39 @@ const rows = qs('#coeff-rows');
 
 const num = (v: number): string => formatNumber(v, 2);
 
+const F0_TIP = 'Grundfrequenz f₀ = 1/T, wobei T die Periodendauer ist. Die n-te Harmonische hat die Frequenz n·f₀.';
+const JUMP_TIP =
+  'Sprunghöhe: Unterschied der Werte direkt vor und nach einem Sprung (Rechteck und Sägezahn: von +1 auf −1, also 2). Das Überschwingen geht für großes N gegen etwa 9 % davon und verschwindet nicht (Gibbs-Phänomen).';
+
+// The readout is built once (the info tips must stay attached while N changes or the animation runs);
+// renderStatus only updates the text of the spans and toggles visibility.
+const el = (tag: string, ...kids: (string | Node)[]): HTMLElement => {
+  const e = document.createElement(tag);
+  e.append(...kids);
+  return e;
+};
+const headText = el('span');
+const f0Term = infoTerm(symbolFragment('f_0'), F0_TIP, 'f₀');
+const headTail = el('span');
+const peakLine = el('span');
+const overText = el('span');
+const overLine = el('span', overText, infoTerm('Sprunghöhe 2', JUMP_TIP, 'Sprunghöhe'));
+const overBr = el('br');
+status.append(el('span', headText, f0Term, headTail), el('br'), peakLine, overBr, overLine);
+
 function renderStatus(): void {
   const { n, sig } = state.values;
-  const head =
-    n === 0
-      ? 'N = 0 → nur der Gleichanteil a₀'
-      : `N = ${n} → höchste Frequenz ${n}·f₀${n === 1 ? ' (nur die Grundschwingung)' : ''}`;
+  headText.textContent = n === 0 ? 'N = 0 → nur der Gleichanteil a₀' : `N = ${n} → höchste Frequenz ${n}·`;
+  f0Term.hidden = n === 0;
+  f0Term.style.display = n === 0 ? 'none' : '';
+  headTail.textContent = n === 1 ? ' (nur die Grundschwingung)' : '';
   const peak = maxValue(coeffs, n);
-  const lines = [head, `Größter Wert: Original ${num(origMax)}, Annäherung ${num(peak)}`];
+  peakLine.textContent = `Größter Wert: Original ${num(origMax)}, Annäherung ${num(peak)}`;
   // the rectangle and sawtooth presets jump by 2 (from +1 to −1)
-  if ((sig === 'rechteck' || sig === 'saegezahn') && peak - 1 >= 0.01) {
-    lines.push(`→ Überschwingen um ${formatNumber(((peak - 1) / 2) * 100)} % der Sprunghöhe 2`);
-  }
-  status.replaceChildren(...lines.flatMap((l, i) => (i ? [document.createElement('br'), l] : [l])));
+  const over = (sig === 'rechteck' || sig === 'saegezahn') && peak - 1 >= 0.01;
+  overLine.style.display = over ? '' : 'none';
+  overBr.style.display = over ? '' : 'none';
+  overText.textContent = over ? `→ Überschwingen um ${formatNumber(((peak - 1) / 2) * 100)} % der ` : '';
 }
 
 function renderTable(): void {
