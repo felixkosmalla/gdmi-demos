@@ -10,7 +10,6 @@ import {
   formatNumber,
   fullscreenButton,
   group,
-  ideaCredit,
   qs,
   resetButton,
   select,
@@ -76,7 +75,6 @@ qs('#controls').append(
 );
 qs('#extra-controls').append(fsSelect);
 qs('#head-actions').append(fullscreenButton(qs('#lecture')), resetButton(state));
-qs('#lecture').append(ideaCredit('audio-aliasing'));
 
 // ---------------------------------------------------------------------------
 // Plots
