@@ -101,3 +101,11 @@ Audio never autoplays from a URL. The user must press Play.
 - **Safari: not tested** (WebDriver needs "Allow remote automation" in Safari's developer settings). Also not tested: real speakers or headphones, i.e. how the browsers' output resamplers sound near 4 kHz (expect the tone to get quieter there; the Erklärung mentions it), and phones (including the iOS silent switch).
 
 - 2026-11-02, on request: "Erklärung" and "Aufgaben" are commented out in index.html (content kept); the f_s selector stays under "Weitere Einstellungen". "Quelle / Idee" moved into the p.sources line under the h1; ideaCredit() removed. No info tips requested.
+
+- 2026-11-02, review fixes:
+  - Sound state moved from main.ts to `playback.ts` (no DOM, `playback.test.ts`). Clicks while the sound is starting share one pending start, and a program exists from the click on, so a double click on Sweep starts and stops it (as after the first use) instead of running a silent visual-only sweep. Changing f_s during a program that started the sound stops it like the program end. The status line is re-rendered on every state change. The UI follows the program at `currentTime − outputLatency` (else `baseLatency`), i.e. as heard.
+  - Worklet: where f changes sides of f_s/2 (jump or sweep), φ → π − φ, so the samples stay those of the alias sine with continuous phase. A/B 3000 ↔ 5000 Hz is one seamless 3-kHz sine (tested on `process()` in `aliasing-worklet.test.ts`).
+  - Time plot uses a cosine (`aliasSine(f, fs, phase)` now returns amplitude and phase): at f_s/2 the samples are ±1 and the red curve goes through them; the plot is continuous across f_s/2. A running program never shows exactly f_s/2 (`programDisplayFrequency`), so the edge-case text doesn't flash up during a sweep. Readout texts in `readout.ts` (tested): all terms from f rounded to 0.1 Hz.
+  - Fallback at exactly f_s/2: volume |sin φ| with a random φ (the phase in the worklet is just as arbitrary).
+  - f slider step per f_s (`SAMPLE_RATES`): 12.5 Hz at 11 025 Hz, so f_s/2 = 5512.5 and f_s are reachable.
+  - Info tip on "Sweep": the tone gets quieter near f_s/2 (the browser's reconstruction low-pass).

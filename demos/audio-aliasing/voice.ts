@@ -15,7 +15,7 @@
 import { getAudioContext, masterGain, rampTo, setVolume } from '../../src/lib/audio';
 import { aliasFrequency } from '../../src/lib/dsp';
 import workletUrl from './aliasing-worklet.ts?worker&url';
-import { aliasProgram, type FreqPoint } from './model';
+import { aliasProgram, aliasSine, type FreqPoint } from './model';
 
 export interface Voice {
   readonly ctx: AudioContext;
@@ -85,8 +85,26 @@ async function workletVoice(fs: number): Promise<Voice> {
 function fallbackVoice(fs: number, ctx: AudioContext): Voice {
   const osc = ctx.createOscillator();
   osc.type = 'sine';
+  // At exactly f_s/2 the samples are (−1)ⁿ · sin φ, so the volume is |sin φ|. The
+  // phase φ at that moment is arbitrary (in the worklet too): pick it at random.
+  const edge = ctx.createGain();
+  osc.connect(edge);
   osc.start();
-  return voice(ctx, fs, 'fallback', osc, osc.frequency, (f) => aliasFrequency(f, fs), (p) => aliasProgram(p, fs));
+  const v = voice(ctx, fs, 'fallback', edge, osc.frequency, (f) => aliasFrequency(f, fs), (p) => aliasProgram(p, fs));
+  let last = NaN;
+  return {
+    ...v,
+    setFrequency(f) {
+      v.setFrequency(f);
+      if (f !== last) rampTo(edge.gain, aliasSine(f, fs, 2 * Math.PI * Math.random()).amplitude, ctx);
+      last = f;
+    },
+    runProgram(p, t0) {
+      v.runProgram(p, t0);
+      last = NaN;
+      rampTo(edge.gain, 1, ctx);
+    },
+  };
 }
 
 function voice(

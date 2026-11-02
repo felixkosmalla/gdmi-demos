@@ -6,19 +6,44 @@
  */
 import { aliasFrequency } from '../../src/lib/dsp';
 
-/** Ideal reconstruction of the samples sin(2π f n / f_s): sign · sin(2π f t). */
+/** Ideal reconstruction of the samples sin(2π f n / f_s + φ): amplitude · sin(2π f t + phase). */
 export interface AliasSine {
   /** Alias frequency in [0, f_s/2]. */
   f: number;
-  /** −1 above f_s/2 (samples equal those of −sin), 0 at exactly f_s/2 (all samples 0). */
-  sign: 1 | -1 | 0;
+  /** 1, except at exactly f_s/2: the samples are (−1)ⁿ · sin φ, so |sin φ| (0 for a sine, 1 for a cosine). */
+  amplitude: number;
+  phase: number;
 }
 
-/** The sine through the samples of sin(2π f t) taken at f_s (f ≥ 0). */
-export function aliasSine(f: number, fs: number): AliasSine {
+/** The sine through the samples of sin(2π f t + phase) taken at f_s (f ≥ 0). */
+export function aliasSine(f: number, fs: number, phase = 0): AliasSine {
   const r = f % fs;
-  const sign = r > fs / 2 ? -1 : r === fs / 2 ? 0 : 1;
-  return { f: aliasFrequency(f, fs), sign };
+  const a = aliasFrequency(f, fs);
+  if (r < fs / 2) return { f: a, amplitude: 1, phase };
+  // sin(2π r n/f_s + φ) = sin(φ − 2π a n/f_s) = sin(2π a n/f_s + π − φ)
+  if (r > fs / 2) return { f: a, amplitude: 1, phase: Math.PI - phase };
+  const s = Math.sin(phase);
+  return { f: a, amplitude: Math.abs(s), phase: s < 0 ? -Math.PI / 2 : Math.PI / 2 };
+}
+
+/**
+ * Selectable sample rates with the step of the f slider. The step must divide
+ * f_s/2 and f_s (the edge cases) and the A/B frequencies.
+ */
+export const SAMPLE_RATES = [
+  { fs: 8000, step: 10 },
+  { fs: 11025, step: 12.5 },
+  { fs: 16000, step: 10 },
+] as const;
+
+/**
+ * f as the UI shows it while a program runs: whole Hz, but never exactly
+ * f_s/2. A sweep passes f_s/2 within a frame; the edge case should not flash up.
+ */
+export function programDisplayFrequency(f: number, fs: number): number {
+  const r = Math.round(f);
+  if (r % fs !== fs / 2) return r;
+  return f < r ? r - 1 : r + 1;
 }
 
 /** A point of a frequency program: the input frequency is `f` at `t` seconds after the start. */
