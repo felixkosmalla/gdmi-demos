@@ -181,6 +181,18 @@ export function decimalsOf(step: number): number {
   return dot < 0 ? 0 : s.length - dot - 1;
 }
 
+/**
+ * Nearest slider value min + k·step within [min, max] (like a range input:
+ * below an off-grid max), rounded to the decimals of min and step, so 0.29
+ * with step 0.1 gives 0.3, not 0.30000000000000004.
+ */
+export function snapToStep(v: number, min: number, max: number, step: number): number {
+  const kMax = Math.floor((max - min) / step + 1e-9);
+  const k = Math.min(kMax, Math.max(0, Math.round((v - min) / step)));
+  const decimals = Math.max(decimalsOf(step), decimalsOf(min));
+  return Number((min + k * step).toFixed(decimals)) + 0; // + 0 turns −0 into 0
+}
+
 /** `document.querySelector` that throws a helpful error instead of returning null. */
 export function qs<E extends Element = HTMLElement>(selector: string, root: ParentNode = document): E {
   const el = root.querySelector<E>(selector);
@@ -251,7 +263,7 @@ export interface SliderOptions<T extends StateValues> {
 /**
  * Range slider bound to a numeric state key, with label and live readout.
  * Updates the state on every `input` event (so the URL follows while dragging).
- * A value from the URL outside [min, max] is clamped.
+ * A value from the URL is clamped to [min, max] and snapped to the step grid (see `snapToStep`).
  */
 export function slider<T extends StateValues>(state: UrlState<T>, o: SliderOptions<T>): HTMLElement {
   const step = o.step ?? 1;
@@ -299,8 +311,8 @@ export function slider<T extends StateValues>(state: UrlState<T>, o: SliderOptio
   });
 
   const v = state.get(o.key) as number;
-  const clamped = Math.min(o.max, Math.max(o.min, v));
-  if (clamped !== v) state.set(o.key, clamped as T[typeof o.key]);
+  const snapped = snapToStep(v, o.min, o.max, step);
+  if (snapped !== v) state.set(o.key, snapped as T[typeof o.key]);
   render();
   return wrap;
 }
