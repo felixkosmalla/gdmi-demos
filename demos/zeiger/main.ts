@@ -10,7 +10,7 @@ import {
   formatNumber,
   fullscreenButton,
   group,
-  ideaCredit,
+  infoTip,
   qs,
   resetButton,
   select,
@@ -388,7 +388,8 @@ function renderPlay(): void {
   playBtn.setAttribute('aria-pressed', String(playing));
 }
 
-const presetButtons = (Object.keys(PRESETS) as PresetName[]).map((name) =>
+const presetNames = Object.keys(PRESETS) as PresetName[];
+const presetButtons = presetNames.map((name) =>
   button({
     label: PRESETS[name].label,
     onClick: () => {
@@ -399,8 +400,24 @@ const presetButtons = (Object.keys(PRESETS) as PresetName[]).map((name) =>
   }),
 );
 
+const PRESET_TIPS: Partial<Record<PresetName, string>> = {
+  oberschwingung:
+    'Oberschwingung: Schwingung mit einem ganzzahligen Vielfachen (2·, 3·, …) der Grundfrequenz. Im Beispiel: f₁ = 0,5 Hz, f₂ = 1 Hz = 2·f₁, Zeiger 2 dreht doppelt so schnell.',
+  schwebung:
+    'Schwebung: Zwei Schwingungen mit fast gleicher Frequenz (hier 1 Hz und 1,1 Hz). Der Ausschlag der Summe schwillt mit |f₁ − f₂| = 0,1 Hz an und ab, also alle 10 s.',
+};
+const AMP_TIP = 'Amplitude A: Länge des Zeigers, also der größte Ausschlag der Schwingung.';
+const FREQ_TIP = 'Frequenz f: Umdrehungen des Zeigers pro Sekunde (in Hz). Die Periode ist T = 1/f.';
+const PHASE_TIP = 'Phase φ: Startwinkel des Zeigers bei t = 0. Eine andere Phase verschiebt die Schwingung in der Zeit.';
+
 qs('#controls').append(
-  group('Beispiel', ...presetButtons),
+  group(
+    'Beispiel',
+    ...presetNames.flatMap((name, i) => {
+      const tip = PRESET_TIPS[name];
+      return tip ? [presetButtons[i], infoTip(PRESETS[name].label, tip)] : [presetButtons[i]];
+    }),
+  ),
   group(
     'Animation',
     playBtn,
@@ -436,11 +453,12 @@ const pointerRows = KEYS.map(([a, f, p], i) => {
   name.append(sw, `Zeiger ${i + 1}`);
   row.append(
     name,
-    slider(state, { key: a, label: 'Amplitude', symbol: `A_${i + 1}`, min: 0, max: 1.5, step: 0.01 }),
-    slider(state, { key: f, label: 'Frequenz', symbol: `f_${i + 1}`, min: 0.05, max: 2, step: 0.05, unit: 'Hz' }),
+    slider(state, { key: a, label: 'Amplitude', symbol: `A_${i + 1}`, min: 0, max: 1.5, step: 0.01, info: i === 0 ? AMP_TIP : undefined }),
+    slider(state, { key: f, label: 'Frequenz', symbol: `f_${i + 1}`, min: 0.05, max: 2, step: 0.05, unit: 'Hz', info: i === 0 ? FREQ_TIP : undefined }),
     slider(state, {
       key: p,
       label: 'Phase',
+      info: i === 0 ? PHASE_TIP : undefined,
       symbol: `φ_${i + 1}`,
       min: -180,
       max: 180,
@@ -454,7 +472,6 @@ qs('#pointers').append(...pointerRows);
 
 qs('#extra-controls').append(slider(state, { key: 'win', label: 'Zeitfenster', min: 2, max: 30, step: 1, unit: 's' }));
 qs('#head-actions').append(fullscreenButton(qs('#lecture')), resetButton(state));
-qs('#lecture').append(ideaCredit('zeiger'));
 
 // Space toggles play/pause (unless a control has the focus).
 addEventListener('keydown', (ev) => {

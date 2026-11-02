@@ -94,3 +94,5 @@ Implementation notes (2026-10-30, done):
 - The time-axis direction and the default preset could be checked with the lecturer.
 - 2026-10-30, on request: the "Erklärung" and "Aufgaben" parts were removed from the page. Below the fold, only "Weitere Einstellungen" (time window, live amplitude formula, Schwebung hören) and "Quelle / Idee" remain. `n` also allows a single pointer (1–3).
 - 2026-10-30, on request: the demo **starts with a single pointer** (`n=1`, no preset active; the other values are the "Oberschwingung" values, so choosing 2 pointers gives f₂ = 2·f₁). The presets switch to two pointers. "Zurücksetzen" goes back to one pointer.
+
+2026-11-02, on request: Info tips (?) added for Oberschwingung, Schwebung (next to the preset buttons) and Amplitude, Frequenz, Phase (on the first pointer's sliders only). "Quelle / Idee" moved into the `.sources` line under the h1; bottom section and `ideaCredit()` removed.
