@@ -165,9 +165,10 @@ function drawSpectrum(p: Plot): void {
     });
   }
 
+  // zero-height originals and aliases stay as dots on the axis (they went somewhere, but cancel or vanish)
   const pick = (kind: string): { xs: number[]; ys: number[] } => {
-    const sel = lines.filter((l) => l.kind === kind);
-    return { xs: sel.map((l) => l.f), ys: sel.map((l) => l.a) };
+    const sel = lines.filter((l) => l.kind === kind && (kind !== 'copy' || l.height > 0));
+    return { xs: sel.map((l) => l.f), ys: sel.map((l) => l.height) };
   };
   const copies = pick('copy');
   const originals = pick('original');
@@ -190,9 +191,9 @@ function drawSpectrum(p: Plot): void {
     const lastLabel = last ? aliasLabel(last.fs) : '';
     if (last && p.xToPx(l.f) - p.xToPx(last.fs[last.fs.length - 1]) < ctx.measureText(lastLabel).width / 2 + fsz * 2) {
       if (!last.fs.includes(l.f)) last.fs.push(l.f);
-      last.a = Math.max(last.a, l.a);
+      last.a = Math.max(last.a, l.height);
     } else {
-      clusters.push({ fs: [l.f], a: l.a });
+      clusters.push({ fs: [l.f], a: l.height });
     }
   }
   for (const c of clusters) {
@@ -282,6 +283,9 @@ const capTime = qs('#cap-time-title');
 
 const hz = (f: number): string => `${formatNumber(f, f % 1 ? 1 : 0)}\u00a0Hz`;
 
+/** "a", "a und b", "a, b und c" */
+const listDe = (xs: string[]): string => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} und ${xs[xs.length - 1]}`);
+
 function renderStatus(): void {
   const { fs } = state.values;
   const a = analyze(comps, fs);
@@ -310,10 +314,20 @@ function renderStatus(): void {
     case 'aliasing': {
       status.classList.add('status--bad');
       parts.push(fsSym(), `\u00a0=\u00a0${hz(fs)} < 2\u00a0·\u00a0${hz(a.fMax)} =\u00a0${hz(2 * a.fMax)}`, document.createElement('br'));
-      const items = a.aliases.map((x) => `${hz(x.f)} erscheint als ${hz(x.alias)}`);
-      parts.push(strong('→ Aliasing: '), items.join(', '));
+      parts.push(strong('→ Aliasing: '));
+      a.aliases.forEach((x, i) => {
+        if (i) parts.push(', ');
+        if (!x.vanishes) parts.push(`${hz(x.f)} erscheint als ${hz(x.alias)}`);
+        else if (x.alias === 0) parts.push(`${hz(x.f)} landet bei ${hz(0)} und verschwindet`);
+        else parts.push(`${hz(x.f)} landet auf `, fsSym(), '/2 und verschwindet');
+      });
       const nyq = a.atNyquist.filter((f) => f < a.fMax);
-      if (nyq.length) parts.push('; ', `${nyq.map(hz).join(', ')} liegt genau auf `, fsSym(), '/2');
+      if (nyq.length) parts.push('; ', `${listDe(nyq.map(hz))} liegt genau auf `, fsSym(), '/2 und verschwindet');
+      for (const o of a.overlaps) {
+        const who = listDe(o.sources.map(hz));
+        parts.push('; ', o.net === 0 ? `${who} heben sich bei ${hz(o.at)} auf` : `${who} überlagern sich bei ${hz(o.at)}`);
+      }
+      if (a.silent) parts.push('. ', strong('Alle Abtastwerte sind 0.'));
       break;
     }
   }
@@ -332,8 +346,9 @@ function render(): void {
   const yTicks = niceTicks(-y, y, 4);
   timePlot.setOptions({ xRange, yRange: [-y, y], yTicks });
   recPlot.setOptions({ xRange, yRange: [-y, y], yTicks });
-  const aMax = Math.max(0.2, ...comps.map((c) => c.a));
   const fMax = spectrumMax(fs);
+  // overlapping components can add up above the largest single amplitude
+  const aMax = Math.max(0.2, ...comps.map((c) => c.a), ...spectrumLines(comps, fs, fMax).map((l) => l.height));
   specPlot.setOptions({ xRange: [-fMax * 0.012, fMax], yRange: [0, aMax * 1.8] });
   renderStatus();
 }

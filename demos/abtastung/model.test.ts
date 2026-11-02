@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { analyze, reconstruct, sampleBlock, signal, spectrumLines, type Component } from './model';
+import { analyze, fold, reconstruct, sampleBlock, signal, spectrumLines, spectrumMax, type Component } from './model';
 
 const all: Component[] = [
   { f: 28, a: 1 },
@@ -23,8 +23,8 @@ describe('abtastung model', () => {
     expect(r.verdict).toBe('aliasing');
     expect(r.fMax).toBe(140);
     expect(r.aliases).toEqual([
-      { f: 140, alias: 10 },
-      { f: 84, alias: 66 },
+      { f: 140, alias: 10, vanishes: false },
+      { f: 84, alias: 66, vanishes: false },
     ]);
     const aliasLines = spectrumLines(all, 150, 450).filter((l) => l.kind === 'alias');
     expect(aliasLines.map((l) => [l.source, l.f]).sort((x, y) => x[1] - y[1])).toEqual([
@@ -69,6 +69,54 @@ describe('abtastung model', () => {
     expect(maxErrorInMiddle(all, 300)).toBeLessThan(0.01);
     expect(maxErrorInMiddle(all, 600)).toBeLessThan(0.01);
     expect(maxErrorInMiddle(all.slice(0, 2), 170)).toBeLessThan(0.03);
+  });
+
+  it('spectrum heights match the samples for every slider position', () => {
+    // over one second (f_s samples) the sines at integer frequencies in (0, f_s/2) are orthogonal,
+    // so (2/f_s)·Σ x[n]·sin(2πφn/f_s) is exactly the amplitude of the sampled signal at φ
+    const sets: Component[][] = [
+      all,
+      [{ f: 28, a: 1 }, { f: 84, a: 0.6 }, { f: 140, a: 0.3 }],
+      [{ f: 28, a: 1 }, { f: 140, a: 1 }],
+    ];
+    for (const cs of sets) {
+      for (let fs = 20; fs <= 600; fs++) {
+        const x = Array.from({ length: fs }, (_, n) => signal(cs, n / fs));
+        const amplitudeAt = (phi: number): number =>
+          phi === 0 || phi === fs / 2
+            ? 0
+            : Math.abs((2 / fs) * x.reduce((s, v, n) => s + v * Math.sin((2 * Math.PI * phi * n) / fs), 0));
+        const lines = spectrumLines(cs, fs, spectrumMax(fs));
+        for (const l of lines) {
+          const phi = l.f <= fs / 2 ? l.f : fold(l.f, fs).alias;
+          expect(l.height, `f_s = ${fs}, line at ${l.f} Hz`).toBeCloseTo(amplitudeAt(phi), 9);
+        }
+        const silent = x.every((v) => Math.abs(v) < 1e-9);
+        expect(analyze(cs, fs).silent, `f_s = ${fs}`).toBe(silent);
+      }
+    }
+  });
+
+  it('reports overlapping and vanishing components', () => {
+    const at168 = analyze(all, 168);
+    expect(at168.overlaps).toEqual([{ at: 28, sources: [28, 140], net: 0 }]);
+    expect(at168.atNyquist).toEqual([84]);
+    expect(at168.silent).toBe(true);
+
+    expect(analyze(all, 112).overlaps).toEqual([{ at: 28, sources: [28, 84, 140], net: 1 }]);
+    expect(analyze(all.filter((c) => c.f !== 84), 112).overlaps).toEqual([{ at: 28, sources: [28, 140], net: 2 }]);
+
+    const at70 = analyze(all, 70);
+    expect(at70.aliases).toEqual([
+      { f: 140, alias: 0, vanishes: true },
+      { f: 84, alias: 14, vanishes: false },
+    ]);
+    expect(at70.silent).toBe(false);
+
+    const at150 = analyze(all, 150);
+    expect(at150.overlaps).toEqual([]);
+    expect(at150.silent).toBe(false);
+    expect(spectrumLines(all, 150, 450).every((l) => l.height === l.a)).toBe(true);
   });
 
   it('reconstruction at f_s = 150 Hz is the aliased signal, not the original', () => {

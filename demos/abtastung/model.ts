@@ -55,13 +55,49 @@ export function reconstruct(block: SampleBlock, t: number): number {
   return sincReconstructUniform(block.t0, block.values, block.fs, t);
 }
 
+/**
+ * Where a component f lands after sampling: its frequency in [0, f_s/2] and the
+ * sign of the sine there. Folding at f_s/2 flips the sign
+ * (sin(2π(f_s − φ)n/f_s) = −sin(2πφn/f_s)); landing on 0 or f_s/2 gives sign 0,
+ * because sin(πm·n) = 0 for every sample n.
+ */
+export function fold(f: number, fs: number): { alias: number; sign: -1 | 0 | 1 } {
+  const eps = 1e-9;
+  const r = ((f % fs) + fs) % fs;
+  if (r < eps || Math.abs(r - fs) < eps) return { alias: 0, sign: 0 };
+  if (Math.abs(r - fs / 2) < eps) return { alias: fs / 2, sign: 0 };
+  return r < fs / 2 ? { alias: r, sign: 1 } : { alias: fs - r, sign: -1 };
+}
+
+const freqKey = (f: number): string => f.toFixed(6);
+
+/** Signed amplitude of the sampled signal at each frequency in [0, f_s/2] that an active component lands on. */
+function sampledAmplitudes(cs: readonly Component[], fs: number): Map<string, number> {
+  const net = new Map<string, number>();
+  for (const c of cs) {
+    if (!(c.a > 0)) continue;
+    const { alias, sign } = fold(c.f, fs);
+    const key = freqKey(alias);
+    const sum = (net.get(key) ?? 0) + sign * c.a;
+    net.set(key, Math.abs(sum) < 1e-9 ? 0 : sum);
+  }
+  return net;
+}
+
 export type LineKind = 'original' | 'copy' | 'alias';
 
 export interface SpectrumLine {
   /** Position in Hz (≥ 0). */
   f: number;
-  /** Amplitude (= amplitude of the source component). */
+  /** Amplitude of the source component. */
   a: number;
+  /**
+   * Height of the line in the spectrum of the sampled signal. Equals `a`
+   * unless components land on the same frequency (their contributions add or
+   * cancel) or on 0 / f_s/2 (all samples 0, height 0). The sampled spectrum is
+   * periodic, so every copy of a component has the same height.
+   */
+  height: number;
   /** Frequency of the original component this line comes from. */
   source: number;
   /** Line position = k·f_s + sign·source. */
@@ -84,9 +120,11 @@ export interface SpectrumLine {
 export function spectrumLines(cs: readonly Component[], fs: number, fMax: number): SpectrumLine[] {
   const out: SpectrumLine[] = [];
   const eps = 1e-9;
+  const net = sampledAmplitudes(cs, fs);
   for (const c of cs) {
     if (!(c.a > 0)) continue;
     const above = c.f > fs / 2 + eps;
+    const height = Math.abs(net.get(freqKey(fold(c.f, fs).alias)) ?? 0);
     const seen = new Set<string>();
     const kMax = Math.ceil((fMax + c.f) / fs) + 1;
     for (let k = -kMax; k <= kMax; k++) {
@@ -94,13 +132,13 @@ export function spectrumLines(cs: readonly Component[], fs: number, fMax: number
         const f = Math.max(0, k * fs + sign * c.f);
         if (k * fs + sign * c.f < -eps || f > fMax + eps) continue;
         // copies of one component can coincide (at 0 and at f_s/2): keep one line
-        const key = f.toFixed(6);
+        const key = freqKey(f);
         if (seen.has(key)) continue;
         seen.add(key);
         let kind: LineKind = 'copy';
         if (k === 0 && sign === 1) kind = 'original';
         else if (above && f <= fs / 2 + eps) kind = 'alias';
-        out.push({ f, a: c.a, source: c.f, k, sign, kind });
+        out.push({ f, a: c.a, height, source: c.f, k, sign, kind });
       }
     }
   }
@@ -112,6 +150,18 @@ export interface AliasInfo {
   f: number;
   /** Frequency it appears at after sampling, in [0, f_s/2]. */
   alias: number;
+  /** True if it lands on 0 or f_s/2: all its samples are 0. */
+  vanishes: boolean;
+}
+
+/** Several components landing on the same frequency in (0, f_s/2). */
+export interface Overlap {
+  /** Common frequency after sampling. */
+  at: number;
+  /** Original frequencies, ascending. */
+  sources: number[];
+  /** Resulting amplitude (≥ 0); 0 means they cancel. */
+  net: number;
 }
 
 export interface Analysis {
@@ -126,22 +176,43 @@ export interface Analysis {
   aliases: AliasInfo[];
   /** Components exactly at f_s/2. */
   atNyquist: number[];
+  /** Frequencies in (0, f_s/2) that two or more components land on, ascending. */
+  overlaps: Overlap[];
+  /** True if there is an active component but every sample is 0. */
+  silent: boolean;
 }
 
 /** Which components alias at sample rate fs (only components with a > 0 count). */
 export function analyze(cs: readonly Component[], fs: number): Analysis {
-  const active = cs.filter((c) => c.a > 0).map((c) => c.f);
+  const activeCs = cs.filter((c) => c.a > 0);
+  const active = activeCs.map((c) => c.f);
   const fMax = active.length ? Math.max(...active) : 0;
   const eps = 1e-9;
   const sorted = [...active].sort((x, y) => y - x);
-  const aliases = sorted.filter((f) => f > fs / 2 + eps).map((f) => ({ f, alias: aliasFrequency(f, fs) }));
+  const aliases = sorted
+    .filter((f) => f > fs / 2 + eps)
+    .map((f) => ({ f, alias: aliasFrequency(f, fs), vanishes: fold(f, fs).sign === 0 }));
   const atNyquist = sorted.filter((f) => Math.abs(f - fs / 2) <= eps);
+
+  const net = sampledAmplitudes(activeCs, fs);
+  const groups = new Map<string, Overlap>();
+  for (const f of [...active].sort((x, y) => x - y)) {
+    const { alias, sign } = fold(f, fs);
+    if (sign === 0) continue;
+    const key = freqKey(alias);
+    const g = groups.get(key) ?? { at: alias, sources: [], net: Math.abs(net.get(key) ?? 0) };
+    g.sources.push(f);
+    groups.set(key, g);
+  }
+  const overlaps = [...groups.values()].filter((g) => g.sources.length > 1).sort((x, y) => x.at - y.at);
+  const silent = active.length > 0 && [...net.values()].every((v) => v === 0);
+
   let verdict: Analysis['verdict'];
   if (!active.length) verdict = 'none';
   else if (fs > 2 * fMax + eps) verdict = 'ok';
   else if (Math.abs(fs - 2 * fMax) <= eps) verdict = 'limit';
   else verdict = 'aliasing';
-  return { fMax, verdict, aliases, atNyquist };
+  return { fMax, verdict, aliases, atNyquist, overlaps, silent };
 }
 
 /** Right end of the spectrum's frequency axis: fixed 450 Hz up to f_s = 290 Hz, then grows so the copies around f_s stay visible. */
