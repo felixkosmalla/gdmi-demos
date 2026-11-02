@@ -169,7 +169,9 @@ export function formatNumber(v: number, decimals = 0): string {
     });
     formatters.set(decimals, f);
   }
-  return f.format(v === 0 ? 0 : v); // avoid "-0"
+  const s = f.format(v);
+  // a value that rounds to zero ("-0", "-0,00") is printed without a sign
+  return /^-0(,0*)?$/.test(s) ? s.slice(1) : s;
 }
 
 /** Number of decimals implied by a step size (0.01 → 2, 5 → 0). */
