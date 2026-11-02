@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BRIGHTNESS_RANGE,
   K_MAX,
   extractLine,
+  growRange,
   keptEnergyShare,
   lineIndex,
   lineSpectrum,
@@ -124,6 +126,28 @@ describe('lowpass', () => {
     expect(kept).toBeCloseTo(lowEnergyShare(lineSpectrum(edge), 10), 9);
     expect(Math.abs(kept - lowEnergyShare(lineSpectrum(edge, true), 10))).toBeGreaterThan(0.01);
     expect(keptEnergyShare(new Float64Array(N).fill(5), new Float64Array(N).fill(5))).toBeNaN();
+  });
+});
+
+describe('growRange', () => {
+  it('keeps 0 … 255 while the values fit', () => {
+    expect(growRange(BRIGHTNESS_RANGE, [0, 128, 255])).toEqual([0, 255]);
+  });
+
+  it('widens to the low-pass overshoot of a 0/255 line, in steps of 10', () => {
+    const edge = Float64Array.from({ length: N }, (_, x) => (x < N / 2 ? 0 : 255));
+    const low = lowpass(edge, 100);
+    expect(Math.min(...low)).toBeLessThan(-20);
+    const [lo, hi] = growRange(BRIGHTNESS_RANGE, low);
+    expect(lo).toBeLessThanOrEqual(Math.min(...low));
+    expect(hi).toBeGreaterThanOrEqual(Math.max(...low));
+    expect(Number.isInteger(lo / 10) && Number.isInteger(hi / 10)).toBe(true);
+    expect(lo).toBeGreaterThan(Math.min(...low) - 10);
+  });
+
+  it('never shrinks a range that was already widened', () => {
+    expect(growRange([-30, 290], [0, 255])).toEqual([-30, 290]);
+    expect(growRange([-30, 260], [-5, 271])).toEqual([-30, 280]);
   });
 });
 

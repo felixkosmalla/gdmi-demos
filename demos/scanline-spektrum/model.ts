@@ -100,6 +100,23 @@ export function lowpass(line: ArrayLike<number>, cutoff: number): Float64Array {
   return re;
 }
 
+/** y range of the brightness profile while nothing leaves it. */
+export const BRIGHTNESS_RANGE: readonly [number, number] = [0, 255];
+
+/**
+ * `current` widened in steps of `step` until it contains all `values` (the
+ * low-pass curve overshoots 0 … 255 at hard edges). It only grows, so the
+ * axis doesn't jump back and forth while the line is dragged.
+ */
+export function growRange(current: readonly [number, number], values: ArrayLike<number>, step = 10): [number, number] {
+  let [lo, hi] = current;
+  for (let i = 0; i < values.length; i++) {
+    if (values[i] < lo) lo = Math.floor(values[i] / step) * step;
+    if (values[i] > hi) hi = Math.ceil(values[i] / step) * step;
+  }
+  return [lo, hi];
+}
+
 /**
  * Share of the line's AC energy (without the mean) that remains in `filtered`,
  * computed in the spatial domain, so it describes the filtered curve itself,

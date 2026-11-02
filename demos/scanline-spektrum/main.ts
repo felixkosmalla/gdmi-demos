@@ -17,9 +17,11 @@ import {
 } from '../../src/lib/controls';
 import { createPlot, legendElement, roles, type LegendItem } from '../../src/lib/plot';
 import {
+  BRIGHTNESS_RANGE,
   K_LOW,
   K_MAX,
   extractLine,
+  growRange,
   keptEnergyShare,
   lineIndex,
   lineSpectrum,
@@ -182,6 +184,11 @@ let spec: Float64Array = new Float64Array(K_MAX + 1);
 let filtered: Float64Array | null = null;
 /** Share of the AC energy kept by the low-pass (NaN while it is off). */
 let tpShare = NaN;
+let profileY: { picture: Picture | null; dir: Direction; range: [number, number] } = {
+  picture: null,
+  dir: 'zeile',
+  range: [...BRIGHTNESS_RANGE],
+};
 let mean = 0;
 let peak = -1;
 let acMax = 0;
@@ -197,6 +204,11 @@ function updateLine(): void {
   filtered = tp < K_MAX ? lowpass(line, tp) : null;
   // The low-pass filters the line itself (no window), so its share comes from the filtered curve.
   tpShare = filtered ? keptEnergyShare(line, filtered) : NaN;
+  // y range of the profile: starts at 0 … 255 for each image and direction, then grows with the overshoot
+  if (!filtered || profileY.picture !== picture || profileY.dir !== dir()) {
+    profileY = { picture, dir: dir(), range: [...BRIGHTNESS_RANGE] };
+  }
+  if (filtered) profileY.range = growRange(profileY.range, filtered);
   mean = line.reduce((s, v) => s + v, 0) / N;
   peak = peakBin(spec);
   const key = `${dir()}/${hann}`;
@@ -331,8 +343,8 @@ const xs = Float64Array.from({ length: N }, (_, i) => i);
 
 const profilePlot = createPlot(qs('#plot-profile'), {
   xRange: [0, N - 1],
-  yRange: [0, 255],
-  yTicks: [0, 50, 100, 150, 200, 250],
+  yRange: [...BRIGHTNESS_RANGE],
+  yTicks: [-100, -50, 0, 50, 100, 150, 200, 250, 300, 350],
   xLabel: 'Position x in Pixel',
   yLabel: 'Helligkeit Y',
   ariaLabel: 'Helligkeitsverlauf entlang der Linie',
@@ -405,7 +417,7 @@ const spectrumPlot = createPlot(qs('#plot-spectrum'), {
 function updatePlotOptions(): void {
   const { log } = state.values;
   const linMax = Math.max(acMax, 5) * 1.2;
-  profilePlot.setOptions({ xLabel: `Position ${dir() === 'zeile' ? 'x' : 'y'} in Pixel` });
+  profilePlot.setOptions({ xLabel: `Position ${dir() === 'zeile' ? 'x' : 'y'} in Pixel`, yRange: profileY.range });
   spectrumPlot.setOptions({
     xLabel: `Ortsfrequenz k in Perioden pro ${across()}`,
     yLabel: log ? 'Amplitude (log)' : 'Amplitude',
