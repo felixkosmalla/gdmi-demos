@@ -52,11 +52,12 @@ Every demo is used in two situations:
 ## Page design (all demos)
 
 - **Lecture area (above the fold):** title, the main plot(s) large, only the essential controls, large type (body ≥ 18 px, plot labels ≥ 16 px). Must work at 1920×1080 and 1280×720 without scrolling. A fullscreen button puts the lecture area into fullscreen.
+- **Sources at the top:** a small `<p class="sources">Quelle / Idee: …</p>` line (credit for the original demo with its old URL, plus e.g. photo credits) as the last child of the lecture header, shown under the title and visible in fullscreen. It replaces both the old bottom "Quelle / Idee" section and the `ideaCredit()` line (2026-11-02; `ideaCredit()` stays in the lib for pages without a sources line).
+- **Info tips:** terms and variables the lecturer names get a small round "?" button with a 1–2 sentence German explanation (hover, keyboard focus, or tap; Escape closes). Use `info: '…'` on `slider`/`toggle`/`select`/`group`, `infoTerm()`/`infoTip()` in JS, or `<span data-info="…">Term</span>` in static HTML (`src/lib/info.ts`). One tip per term, at its most prominent place in the lecture area.
 - **Below the fold:**
   - **"Erklärung"**: a short German explanation in the slides' terminology (Abtastrate, Nyquist-Frequenz, Zeiger, Oberschwingung …).
   - **"Ausprobieren / Aufgaben"**: extra controls and 3–5 small exercises.
-  - A **"Quelle / Idee"** paragraph crediting the original demo (with its old URL).
-- **Credit in the lecture area:** `ideaCredit(slug)` appends a short "Idee nach: …" line built from the demo's `replaces` field in `src/demos.ts`, so the source is visible on the projector too. Every demo calls it (see the template).
+  - On the lecturer's request (2026-11-02), Erklärung and Aufgaben may be wrapped in an HTML comment per demo (kept in the file, not shown). Extra controls stay visible; a section left with only controls is called "Weitere Einstellungen".
 - **URL state:** all relevant parameters live in the query string (e.g. `abtastung/?fs=150`). Changing a control updates the URL with `history.replaceState`, and loading a URL restores the state, so a slide can link to an exact configuration. A "Zurücksetzen" button restores the defaults.
 - **Look:** German UI, light theme by default (projectors), accent color `#0066C0` (from the slide template), neutral greys, a consistent color per signal role across demos (original = accent blue, samples = dark grey, reconstruction/approximation = red/orange). Usable on phones (~390 px): plots stack vertically and controls go full width.
 - **Privacy:** no tracking, no cookies, no external CDNs or fonts. Everything is self-hosted.
@@ -80,6 +81,7 @@ src/demos.ts                  registry: { slug, title, deck, slides, description
 src/landing.ts                renders the landing page's demo list (pure function, tested)
 src/lib/plot.ts               HiDPI canvas plotting
 src/lib/controls.ts           labelled controls bound to URL query state, group(), ideaCredit()
+src/lib/info.ts               info tips ("?" button + tooltip), placeTip() tested in info.test.ts
 src/lib/dsp.ts                FFT, Fourier coefficients, sinc reconstruction, aliasing
 src/lib/dsp.test.ts           vitest (also plot.test.ts, landing.test.ts)
 src/lib/audio.ts              Web Audio helpers

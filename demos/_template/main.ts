@@ -1,7 +1,7 @@
 // Demo template: copy demos/_template/ to demos/<slug>/ and adapt.
 // Wiring: urlState (query string) → controls → plot redraw.
 import '../../src/lib/page.css';
-import { formatNumber, fullscreenButton, ideaCredit, qs, resetButton, slider, urlState } from '../../src/lib/controls';
+import { formatNumber, fullscreenButton, qs, resetButton, slider, urlState } from '../../src/lib/controls';
 import { createPlot, roles } from '../../src/lib/plot';
 
 // 1. State: every parameter with its default. Types (number/boolean/string)
@@ -27,14 +27,23 @@ const plot = createPlot(qs('#plot-time'), {
 
 // 3. Controls: essential ones in the lecture area, extras in the self-study part.
 qs('#controls').append(
-  slider(state, { key: 'f', label: 'Frequenz', symbol: 'f', min: 0.5, max: 10, step: 0.5, unit: 'Hz' }),
+  // `info` adds a "?" tip next to the label (short German explanation, slide terminology).
+  slider(state, {
+    key: 'f',
+    label: 'Frequenz',
+    symbol: 'f',
+    min: 0.5,
+    max: 10,
+    step: 0.5,
+    unit: 'Hz',
+    info: 'Anzahl der Schwingungen pro Sekunde, f = 1/T (in Hz).',
+  }),
 );
 qs('#extra-controls').append(
   slider(state, { key: 'a', label: 'Amplitude', symbol: 'A', min: 0, max: 1, step: 0.05 }),
 );
 qs('#head-actions').append(fullscreenButton(qs('#lecture')), resetButton(state));
-// "Idee nach: …" from the `replaces` field of this demo's entry in src/demos.ts.
-qs('#lecture').append(ideaCredit('<slug>'));
+// Sources are in the HTML (p.sources under the title), so no ideaCredit() here.
 
 // 4. Derived text (status line) and redraw on every change.
 const status = qs('#status');

@@ -7,6 +7,10 @@
  *   state.subscribe(() => plot.redraw());
  */
 import { demos } from '../demos';
+import { infoTip } from './info';
+
+// Info tips are re-exported so demos can import everything from here.
+export { infoTerm, infoTip, initInfoTips } from './info';
 
 export type Primitive = number | boolean | string;
 export type StateValues = Record<string, Primitive>;
@@ -210,6 +214,19 @@ function uid(prefix: string): string {
 
 type KeysOfType<T, V> = { [K in keyof T]: T[K] extends V ? K : never }[keyof T] & string;
 
+/**
+ * Returns `label` alone, or (with `info`) `<span class="control-name">label ?</span>`.
+ * The "?" button sits next to the label element, not inside it, so it doesn't
+ * end up in the control's accessible name.
+ */
+function withInfo(label: HTMLElement, term: string, info: string | undefined): HTMLElement {
+  if (!info) return label;
+  const name = document.createElement('span');
+  name.className = 'control-name';
+  name.append(label, infoTip(term, info));
+  return name;
+}
+
 // ---------------------------------------------------------------------------
 // Control factories. Each returns an element; append it where you want it.
 
@@ -227,6 +244,8 @@ export interface SliderOptions<T extends StateValues> {
   unit?: string;
   /** Custom readout text for a value (replaces "value unit"). */
   format?: (v: number) => string;
+  /** Short explanation shown by a "?" info tip next to the label (see info.ts). */
+  info?: string;
 }
 
 /**
@@ -249,7 +268,7 @@ export function slider<T extends StateValues>(state: UrlState<T>, o: SliderOptio
   const out = document.createElement('output');
   out.htmlFor.add(id);
   out.className = 'readout';
-  head.append(label, out);
+  head.append(withInfo(label, o.label, o.info), out);
 
   const input = document.createElement('input');
   input.type = 'range';
@@ -291,12 +310,17 @@ export interface ToggleOptions<T extends StateValues> {
   label: string;
   /** Optional CSS color shown as a small swatch before the label (e.g. a signal's color). */
   swatch?: string;
+  /** Short explanation shown by a "?" info tip after the label (see info.ts). */
+  info?: string;
 }
 
-/** Checkbox bound to a boolean state key. */
+/**
+ * Checkbox bound to a boolean state key. Returns `label.control-toggle`; with
+ * `info` a `span.control-toggle.has-info` holding that label and the "?" button.
+ */
 export function toggle<T extends StateValues>(state: UrlState<T>, o: ToggleOptions<T>): HTMLElement {
   const label = document.createElement('label');
-  label.className = 'control control-toggle';
+  label.className = o.info ? 'toggle-label' : 'control control-toggle';
   const input = document.createElement('input');
   input.type = 'checkbox';
   label.append(input);
@@ -315,7 +339,11 @@ export function toggle<T extends StateValues>(state: UrlState<T>, o: ToggleOptio
     if (changed.includes(o.key)) render();
   });
   render();
-  return label;
+  if (!o.info) return label;
+  const wrap = document.createElement('span');
+  wrap.className = 'control control-toggle has-info';
+  wrap.append(label, infoTip(o.label, o.info));
+  return wrap;
 }
 
 export interface SelectOption<V extends Primitive> {
@@ -332,6 +360,8 @@ export interface SelectOptions<T extends StateValues, K extends keyof T & string
    * `'dropdown'`: a native <select>.
    */
   variant?: 'buttons' | 'dropdown';
+  /** Short explanation shown by a "?" info tip next to the label (see info.ts). */
+  info?: string;
 }
 
 /**
@@ -366,7 +396,7 @@ export function select<T extends StateValues, K extends keyof T & string>(
       if (changed.includes(o.key)) render();
     });
     render();
-    wrap.append(label, sel);
+    wrap.append(withInfo(label, o.label, o.info), sel);
     return wrap;
   }
 
@@ -397,7 +427,7 @@ export function select<T extends StateValues, K extends keyof T & string>(
     if (changed.includes(o.key)) render();
   });
   render();
-  wrap.append(label, row);
+  wrap.append(withInfo(label, o.label, o.info), row);
   return wrap;
 }
 
@@ -420,27 +450,31 @@ export function button(o: ButtonOptions): HTMLButtonElement {
   return b;
 }
 
-/** Labelled row of controls or buttons (e.g. presets, toggles) with role="group". */
-export function group(label: string, ...children: HTMLElement[]): HTMLElement {
+/**
+ * Labelled row of controls or buttons (e.g. presets, toggles) with role="group".
+ * `label` may be `{ label, info }` to add a "?" info tip next to it.
+ */
+export function group(label: string | { label: string; info?: string }, ...children: HTMLElement[]): HTMLElement {
+  const { label: text, info } = typeof label === 'string' ? { label } : label;
   const wrap = document.createElement('div');
   wrap.className = 'control';
   wrap.setAttribute('role', 'group');
   const l = document.createElement('span');
   l.className = 'control-label';
-  l.textContent = label;
+  l.textContent = text;
   l.id = uid('grp');
   wrap.setAttribute('aria-labelledby', l.id);
   const row = document.createElement('div');
   row.className = 'button-row';
   row.append(...children);
-  wrap.append(l, row);
+  wrap.append(withInfo(l, text, info), row);
   return wrap;
 }
 
 /**
- * Short "Idee nach: …" line for the lecture area, taken from the demo's
- * `replaces` entry in src/demos.ts. Append it to `#lecture`. The longer
- * "Quelle / Idee" paragraph below the fold stays in the HTML.
+ * Short "Idee nach: …" line built from the demo's `replaces` entry in
+ * src/demos.ts. Demos now show their sources in a `p.sources` line under the
+ * <h1> instead (see page.css); this stays for pages without one.
  */
 export function ideaCredit(slug: string): HTMLParagraphElement {
   const demo = demos.find((d) => d.slug === slug);

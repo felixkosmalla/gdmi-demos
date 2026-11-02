@@ -14,11 +14,19 @@
         <a class="back" href="../">← Alle Demos</a>
         <h1>Demo-Vorlage</h1>
         <div class="head-actions" id="head-actions"></div>
+        <!-- Sources: small line under the title, visible in fullscreen too. -->
+        <p class="sources">
+          Quelle / Idee: … (Originaldemo, Autor:innen, Institution),
+          <a href="https://example.org/alte-demo">https://example.org/alte-demo</a>
+        </p>
       </header>
 
       <div class="plots">
         <figure class="plot-box">
-          <figcaption>Zeitbereich</figcaption>
+          <!-- Info tip from static HTML: data-info on the term (see src/lib/info.ts). -->
+          <figcaption>
+            <span data-info="Darstellung des Signals über der Zeit t: Wie groß ist x(t) zu jedem Zeitpunkt?">Zeitbereich</span>
+          </figcaption>
           <div class="plot" id="plot-time"></div>
         </figure>
       </div>
@@ -27,7 +35,8 @@
       <p class="status" id="status" aria-live="polite"></p>
     </main>
 
-    <!-- Self-study section below the fold. -->
+    <!-- Self-study section below the fold. Erklärung and Aufgaben may be
+         wrapped in an HTML comment per demo if the lecturer doesn't want them. -->
     <section class="explain">
       <h2>Erklärung</h2>
       <p>
@@ -42,9 +51,6 @@
         <li>Zweite Aufgabe.</li>
         <li>Dritte Aufgabe.</li>
       </ol>
-
-      <h2>Quelle / Idee</h2>
-      <p class="source">Idee nach: … (Originaldemo, Autor:innen, Institution).</p>
     </section>
   </body>
 </html>

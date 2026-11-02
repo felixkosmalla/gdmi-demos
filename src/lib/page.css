@@ -4,11 +4,17 @@
  * Page structure (see demos/_template/index.html):
  *   main.lecture            projector area, fills the viewport height
  *     header.lecture-head   back link, title, actions (fullscreen, reset)
+ *       p.sources           small "Quelle / Idee: …" line; last child of the
+ *                           header, shown on its own line under the title
  *     .plots                plot grid (stacked; .plots--row = side by side)
  *       figure.plot-box > figcaption + .plot (canvas container)
  *     .controls             essential controls
- *     p.credit              "Idee nach: …" (ideaCredit() in controls.ts)
+ *     p.credit              "Idee nach: …" (ideaCredit(); only for pages without p.sources)
  *   section.explain        self-study part below the fold
+ *
+ * Info tips (info.ts): button.info-tip is the round "?" button,
+ * span.info-term keeps a term and its button on one line,
+ * .control-name wraps a control label + button, div.info-popup is the tooltip.
  */
 
 /* ---------- Theme ------------------------------------------------------ */
@@ -355,6 +361,31 @@ sub {
   min-height: 1.5em;
 }
 
+/*
+ * Sources line directly under the title, inside the lecture area (so it is
+ * visible in fullscreen): <p class="sources">Quelle / Idee: … <a>…</a></p>
+ * as the last child of header.lecture-head.
+ */
+.sources {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.7em;
+  line-height: 1.35;
+  overflow-wrap: anywhere; /* long URLs must not widen the page on phones */
+}
+
+.lecture-head > .sources {
+  flex: 1 1 100%;
+}
+
+.sources a {
+  color: inherit;
+}
+
+.sources a:hover {
+  color: var(--accent);
+}
+
 /* "Idee nach: …" line at the bottom of the lecture area (ideaCredit()) */
 .credit {
   margin: 0;
@@ -454,6 +485,129 @@ select {
 .btn:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/* ---------- Info tips (info.ts) ---------------------------------------- */
+/* Round "?" button, about 1.2em of the surrounding text, inline with it. */
+button.info-tip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 1.6em;
+  height: 1.6em;
+  min-height: 0;
+  margin: 0 0 0 0.3em;
+  padding: 0;
+  border: 1.5px solid var(--accent);
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.75em;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: 0.15em;
+  cursor: help;
+}
+
+/* larger invisible touch target */
+button.info-tip::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+}
+
+button.info-tip:hover,
+button.info-tip[data-open] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.info-term {
+  white-space: nowrap;
+}
+
+.control-name {
+  display: inline-flex;
+  align-items: baseline;
+  min-width: 0;
+}
+
+/* toggle() with `info`: the label inside the bordered box, the button after it */
+.control-toggle.has-info {
+  gap: 0;
+  padding: 0 12px 0 0;
+  cursor: default;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0 6px 12px;
+  cursor: pointer;
+}
+
+/* The tooltip. position: fixed, so overflow containers never clip it. */
+.info-popup {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1000;
+  max-width: min(26em, calc(100vw - 16px));
+  padding: 0.5em 0.75em;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 4px 16px rgba(27, 31, 36, 0.18);
+  font-family: var(--font);
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: break-word;
+  animation: info-fade 0.12s ease-out;
+}
+
+/* small arrow pointing at the button */
+.info-popup::before {
+  content: '';
+  position: absolute;
+  left: var(--arrow-x, 50%);
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  transform: rotate(45deg);
+}
+
+.info-popup[data-side='top']::before {
+  bottom: -6px;
+  border-top: 0;
+  border-left: 0;
+}
+
+.info-popup[data-side='bottom']::before {
+  top: -6px;
+  border-bottom: 0;
+  border-right: 0;
+}
+
+@keyframes info-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .info-popup {
+    animation: none;
+  }
 }
 
 /* ---------- Self-study section ----------------------------------------- */
