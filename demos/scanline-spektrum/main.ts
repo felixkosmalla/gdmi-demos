@@ -86,6 +86,32 @@ function pictureFromLum(lum: Float64Array): Picture {
   return { canvas, lum, acMax: new Map() };
 }
 
+/**
+ * Draws the square (sx, sy, s) of `src` scaled to size × size. Large factors go
+ * through repeated halving (each step a 2 × 2 average), so browsers that ignore
+ * imageSmoothingQuality = 'high' don't alias fine detail.
+ */
+function drawScaled(ctx: CanvasRenderingContext2D, src: CanvasImageSource, sx: number, sy: number, s: number, size: number): void {
+  let source = src;
+  let x = sx;
+  let y = sy;
+  let w = s;
+  while (w >= 2 * size) {
+    const half = Math.ceil(w / 2);
+    const c = document.createElement('canvas');
+    c.width = c.height = half;
+    const cx = c.getContext('2d');
+    if (!cx) break;
+    cx.imageSmoothingEnabled = true;
+    cx.imageSmoothingQuality = 'high';
+    cx.drawImage(source, x, y, w, w, 0, 0, half, half);
+    [source, x, y, w] = [c, 0, 0, half];
+  }
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(source, x, y, w, w, 0, 0, size, size);
+}
+
 /** Centre square of the image, scaled to N × N (transparent parts become white). */
 function pictureFromImage(img: HTMLImageElement): Picture {
   const [canvas, ctx] = newCanvas();
@@ -94,8 +120,7 @@ function pictureFromImage(img: HTMLImageElement): Picture {
   const s = Math.min(w, h);
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, N, N);
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(img, (w - s) / 2, (h - s) / 2, s, s, 0, 0, N, N);
+  drawScaled(ctx, img, (w - s) / 2, (h - s) / 2, s, N);
   const lum = luminance(ctx.getImageData(0, 0, N, N).data);
   return { canvas, lum, acMax: new Map() };
 }
@@ -475,13 +500,16 @@ function thumb(id: ImageId): HTMLElement {
     img.className = 'thumb';
     return img;
   }
+  // At device resolution (32 CSS px, as `.pick .thumb` in index.html). The stripes show a
+  // quarter of the image (2 and 8 periods): all 32 fine periods would be about 1 px each,
+  // which turns into moiré or grey.
+  const px = Math.round(32 * (window.devicePixelRatio || 1));
   const c = document.createElement('canvas');
-  c.width = 72;
-  c.height = 72;
+  c.width = px;
+  c.height = px;
   c.className = 'thumb';
-  const ctx = c.getContext('2d')!;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(patternPicture(id).canvas, 0, 0, 72, 72);
+  const src = id === 'streifen-grob' || id === 'streifen-fein' ? N / 4 : N;
+  drawScaled(c.getContext('2d')!, patternPicture(id).canvas, 0, 0, src, px);
   return c;
 }
 
