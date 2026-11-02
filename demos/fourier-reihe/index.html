@@ -71,7 +71,7 @@
             <div class="plot plot--draw" id="plot-signal"></div>
           </figure>
           <figure class="plot-box" id="box-mag">
-            <figcaption class="caption-row" id="cap-mag"><span><span data-info="Balken bei n: Amplitude aₙ (≥ 0) der Schwingung mit n·f₀; n = 0 ist der Gleichanteil.">Betragsspektrum</span> a<sub>n</sub></span></figcaption>
+            <figcaption class="caption-row" id="cap-mag"><span><span data-info="Balken bei n: Amplitude aₙ (≥ 0) der Schwingung mit n·f₀; n = 0 ist der Gleichanteil, ein negativer a₀ erscheint als Balken der Höhe |a₀|.">Betragsspektrum</span> a<sub>n</sub></span></figcaption>
             <div class="plot" id="plot-mag"></div>
           </figure>
           <figure class="plot-box" id="box-phase" hidden>
@@ -84,8 +84,8 @@
           <div class="controls" id="controls"></div>
           <p class="status readout-big" id="status" aria-live="polite"></p>
           <p class="hint" id="hint">
-            Zeichnen: in der oberen Grafik mit Maus oder Finger ziehen. Das ändert eine Periode, die zweite
-            wiederholt sie.
+            Zeichnen: in der oberen Grafik mit Maus oder Finger ziehen (Werte von −1 bis +1). Das ändert eine
+            Periode, die zweite wiederholt sie.
           </p>
         </aside>
       </div>
@@ -112,8 +112,8 @@
       </p>
       <p>
         Das <strong>Betragsspektrum</strong> zeigt a<sub>n</sub> über n, das <strong>Phasenspektrum</strong>
-        θ<sub>n</sub> über n. Bricht man die Summe nach N Harmonischen ab, erhält man eine
-        <strong>Annäherung</strong> (rot), deren höchste Frequenz N · f<sub>0</sub> ist. Im Betragsspektrum
+        θ<sub>n</sub> über n. Bricht man die Summe nach der Harmonischen n = N ab, erhält man eine
+        <strong>Annäherung</strong> (rot), deren höchste Frequenz höchstens N · f<sub>0</sub> ist. Im Betragsspektrum
         sind die Harmonischen oberhalb von N grau: Sie fehlen in der Annäherung.
       </p>
       <p>
@@ -142,8 +142,8 @@
         Mittelwert beider Seiten (hier 0).
       </p>
       <p>
-        <strong>Zeichnen:</strong> Die Demo speichert eine Periode als 2048 Werte und berechnet die Koeffizienten
-        mit der FFT. Was du zeichnest, wiederholt sich periodisch. Passen Anfang und Ende deiner Zeichnung nicht
+        <strong>Zeichnen:</strong> Die Demo speichert eine Periode als 2048 Werte zwischen −1 und +1 und berechnet
+        die Koeffizienten mit der FFT. Was du zeichnest, wiederholt sich periodisch. Passen Anfang und Ende deiner Zeichnung nicht
         zusammen, entsteht an der Periodengrenze ein Sprung, mit Gibbs-Überschwingen.
       </p>
       <p>
@@ -174,8 +174,8 @@
       </div>
       <p>
         n = 0 ist der Gleichanteil. Ist a<sub>0</sub> negativ, steht hier sein Betrag mit der Phase 180°
-        (cos 180° = −1). „–“ heißt: Die Harmonische ist nicht enthalten (a<sub>n</sub> = 0), eine Phase gibt es
-        dann nicht.
+        (cos 180° = −1). „–“ heißt: Die Harmonische ist nicht enthalten (a<sub>n</sub> = 0 oder kleiner als
+        0,1 % des größten Koeffizienten), eine Phase wird dann nicht angezeigt.
       </p>
 
       <!-- Auf Wunsch ausgeblendet (2026-11-02): Aufgaben. Die Aufgaben sind eine deutsche Bearbeitung der Übungen des Original-Applets (Quelle siehe Zeile unter der Überschrift).
@@ -200,7 +200,7 @@
           Zeichne ein Signal mit großem Gleichanteil und großer Grundschwingung, aber kleinen Oberschwingungen.
           <details>
             <summary>Lösung</summary>
-            <p>Dieselbe glatte Welle wie in Aufgabe 1, aber nach oben verschoben (z. B. zwischen 0,2 und 1,4).</p>
+            <p>Dieselbe glatte Welle wie in Aufgabe 1, aber nach oben verschoben (z. B. zwischen 0 und 1).</p>
           </details>
         </li>
         <li>

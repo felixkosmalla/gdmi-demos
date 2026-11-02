@@ -55,7 +55,7 @@ The intmath "Fourier graph applet" was a stopgap and is replaced too.
 | Param | Type | Default | Meaning |
 |-------|------|---------|---------|
 | `sig` | string | `rechteck` | `rechteck`, `dreieck`, `saegezahn`, `sinus`, `zeichnen` |
-| `n` | number | 5 | number of harmonics |
+| `n` | number | 5 | highest harmonic N (the approximation uses n = 0 … N) |
 | `view` | string | `betrag` | `betrag` / `phase` / `beide` |
 
 Drawn curves are not stored in the URL; they're too long. Optionally offer "Link kopieren" with a compressed curve. That is low priority.
@@ -107,3 +107,5 @@ Drawn curves are not stored in the URL; they're too long. Optionally offer "Link
 **Open:** "Link kopieren" with a compressed drawn curve (low priority) is not built. The README link could become `?sig=rechteck&n=9` if the slide screenshot uses N = 9 (maintainers' call).
 
 2026-11-02, on request: "Erklärung" and "Ausprobieren / Aufgaben" are commented out in `index.html` (content kept; the coefficient table stays visible). "Quelle / Idee" moved into the `.sources` line under the h1 (bottom section and `ideaCredit()` removed). Info tips added for Harmonische (N slider), f₀ and Sprunghöhe (readout), Betragsspektrum and Phasenspektrum (figcaptions). Note: the f₀ tip is in the readout and thus absent at N = 0; the Sprunghöhe tip only appears while the overshoot line is shown (Rechteck/Sägezahn, overshoot ≥ 1 %).
+
+2026-11-02, review fixes: the overshoot readout is now max(approximation − original) on the high side of the jump (`overshoot` in model.ts), so the Sägezahn also reads 9 % (before: (peak − 1)/2 gave 4/7/8 % at N = 5/10/50, since its peak sits ≈ 1/N before the jump where the ramp is below 1); the line is hidden while only one harmonic is present (Rechteck N = 1, 2: 4/π, not Gibbs). N is called the highest harmonic ("Harmonische bis", legend "Annäherung bis n = N"); the readout names the highest frequency actually present ("N = 4 → höchste Frequenz 3·f₀ (a₄ = 0)"), and the animation moves on after 80 ms on steps with aₙ = 0. Coefficients below 0,1 % of the largest aₙ count as not contained (no bar/stem, "–" in the table). A plain click on a preset no longer switches to "Zeichnen" (drawing starts after 4 px of movement). Drawings are clamped to ±1 (like the presets) so their approximation fits the ±1,5 plot. Phases are wrapped after rounding (359,97° → 0,0°). A stroke longer than one period keeps its last period. URL values snap to the slider step (controls.ts), e.g. `?n=2.5` → 3.

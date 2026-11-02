@@ -55,7 +55,8 @@ export function coefficients(period: ArrayLike<number>, nMax = N_MAX): FourierCo
  * value, so fast pointer moves leave no gaps, and samples outside the touched
  * x range stay as they are. t is in periods and may lie outside [0, 1) (a plot
  * showing two periods); indices wrap modulo the period length. y is clamped
- * to [yMin, yMax]. A stroke never covers more than one period.
+ * to [yMin, yMax]. A stroke longer than one period writes only its last
+ * period (in drawing direction), as if painted over itself.
  */
 export function paintSegment(
   period: Float64Array,
@@ -72,12 +73,17 @@ export function paintSegment(
   let u1 = t1 * m;
   let v0 = clamp(y0);
   let v1 = clamp(y1);
-  if (u1 < u0) {
+  const leftToRight = u0 <= u1;
+  if (!leftToRight) {
     [u0, u1] = [u1, u0];
     [v0, v1] = [v1, v0];
   }
-  const k0 = Math.round(u0);
-  const k1 = Math.min(Math.round(u1), k0 + m - 1);
+  let k0 = Math.round(u0);
+  let k1 = Math.round(u1);
+  if (k1 - k0 >= m) {
+    if (leftToRight) k0 = k1 - m + 1;
+    else k1 = k0 + m - 1;
+  }
   for (let k = k0; k <= k1; k++) {
     const u = Math.min(u1, Math.max(u0, k));
     const v = u1 === u0 ? v1 : v0 + ((v1 - v0) * (u - u0)) / (u1 - u0);
@@ -85,9 +91,48 @@ export function paintSegment(
   }
 }
 
-/** Largest value of the approximation with n harmonics over one period (sampled densely). */
+/** Largest value of the approximation with harmonics up to n over one period (sampled densely). */
 export function maxValue(coeffs: FourierCoefficients, n: number, steps = Math.max(4096, 40 * n)): number {
   let max = -Infinity;
   for (let i = 0; i < steps; i++) max = Math.max(max, fourierSynthesize(coeffs, n, i / steps));
   return max;
+}
+
+/** Position (in periods) of the jump from +1 down to −1, for the presets that have one. */
+export const JUMP_AT: Partial<Record<Preset, number>> = { rechteck: 0.5, saegezahn: 1 };
+
+/**
+ * Gibbs overshoot as a fraction of the jump height 2 of a period that jumps
+ * from +1 down to −1 at t = jumpAt: the largest amount by which the
+ * approximation exceeds the original on the high side, t ∈ (jumpAt − ½, jumpAt),
+ * compared at the samples. (Peak − 1 is not enough: the sawtooth's peak lies
+ * about 1/N before the jump, where the ramp is still below 1.)
+ */
+export function overshoot(period: ArrayLike<number>, coeffs: FourierCoefficients, n: number, jumpAt: number): number {
+  const m = period.length;
+  const end = Math.round(jumpAt * m);
+  let max = -Infinity;
+  for (let k = end - m / 2 + 1; k < end; k++) {
+    max = Math.max(max, fourierSynthesize(coeffs, n, k / m) - period[((k % m) + m) % m]);
+  }
+  return max / 2;
+}
+
+/**
+ * Coefficients below this fraction of the largest aₙ count as "not contained"
+ * (no phase, no bar): a single stray sample adds about 2·Δy/M to every aₙ, with
+ * arbitrary phases.
+ */
+export const AMP_EPS = 1e-3;
+
+/** For n = 0…nMax: is aₙ (n = 0: |a₀|) large enough to count as contained (see {@link AMP_EPS})? */
+export function contained(coeffs: FourierCoefficients): boolean[] {
+  const max = coeffs.amp.reduce((m, a) => Math.max(m, a), 0);
+  return Array.from(coeffs.amp, (a) => a > AMP_EPS * max);
+}
+
+/** Phase in degrees rounded to 0,1°, in [0, 360) also after rounding (359,97° → 0°, not 360°). */
+export function phaseDegrees(rad: number): number {
+  const d = Math.round((rad * 1800) / Math.PI) / 10;
+  return d >= 360 ? d - 360 : d;
 }

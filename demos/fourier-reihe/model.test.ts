@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { fourierSynthesize } from '../../src/lib/dsp';
-import { M, N_MAX, coefficients, maxValue, paintSegment, presetPeriod } from './model';
+import {
+  JUMP_AT,
+  M,
+  N_MAX,
+  coefficients,
+  contained,
+  maxValue,
+  overshoot,
+  paintSegment,
+  phaseDegrees,
+  presetPeriod,
+} from './model';
 
 const deg = (rad: number): number => (rad * 180) / Math.PI;
 
@@ -75,6 +86,66 @@ describe('Gibbs overshoot', () => {
   });
 });
 
+describe('overshoot', () => {
+  const over = (name: 'rechteck' | 'saegezahn', n: number): number => {
+    const p = presetPeriod(name);
+    return overshoot(p, coefficients(p), n, JUMP_AT[name] as number);
+  };
+
+  it('square and sawtooth: ≈ 9 % of the jump height for large N', () => {
+    for (const name of ['rechteck', 'saegezahn'] as const) {
+      for (const n of [5, 10, 20, 50]) {
+        expect(over(name, n)).toBeGreaterThan(0.088);
+        expect(over(name, n)).toBeLessThan(0.095);
+      }
+      expect(over(name, 50)).toBeCloseTo(0.0895, 3);
+    }
+  });
+
+  it('sawtooth: measured against the ramp, not against 1 (its peak lies ≈ 1/N before the jump)', () => {
+    const c = coefficients(presetPeriod('saegezahn'));
+    expect((maxValue(c, 10) - 1) / 2).toBeLessThan(0.05); // the old measure
+    expect(over('saegezahn', 10)).toBeCloseTo(0.0899, 3);
+  });
+
+  it('decreases towards 9 % with small N', () => {
+    expect(over('rechteck', 1)).toBeCloseTo((4 / Math.PI - 1) / 2, 3);
+    expect(over('rechteck', 3)).toBeCloseTo(0.1, 2);
+    expect(over('saegezahn', 2)).toBeLessThan(over('saegezahn', 1));
+  });
+});
+
+describe('contained', () => {
+  it('square: odd harmonics only, a₀ = 0 is not contained', () => {
+    const ok = contained(coefficients(presetPeriod('rechteck')));
+    expect(ok[0]).toBe(false);
+    for (let n = 1; n <= N_MAX; n++) expect(ok[n]).toBe(n % 2 === 1);
+  });
+
+  it('ignores tiny coefficients from a single painted sample', () => {
+    const p = presetPeriod('sinus');
+    paintSegment(p, 0.5, 0.2, 0.5, 0.2, -1, 1);
+    const c = coefficients(p);
+    expect(c.amp[7]).toBeGreaterThan(0); // the stray sample adds ≈ 2·0.2/M to every aₙ …
+    const ok = contained(c);
+    expect(ok[1]).toBe(true);
+    for (let n = 2; n <= N_MAX; n++) expect(ok[n]).toBe(false); // … which doesn't count
+  });
+
+  it('an all-zero signal contains nothing', () => {
+    expect(contained(coefficients(new Float64Array(M))).some(Boolean)).toBe(false);
+  });
+});
+
+describe('phaseDegrees', () => {
+  it('rounds to 0,1° and wraps 360° to 0°', () => {
+    expect(phaseDegrees(Math.PI / 2)).toBe(90);
+    expect(phaseDegrees((359.97 * Math.PI) / 180)).toBe(0);
+    expect(phaseDegrees((359.94 * Math.PI) / 180)).toBe(359.9);
+    expect(phaseDegrees(0)).toBe(0);
+  });
+});
+
 describe('paintSegment', () => {
   const Y = 1.5;
 
@@ -132,6 +203,14 @@ describe('paintSegment', () => {
     // t in the second period paints the same samples as in the first
     paintSegment(p, 1.5, -1, 1.5, -1, -Y, Y);
     expect(p[M / 2]).toBe(-1);
+  });
+
+  it('a stroke longer than one period keeps its last period', () => {
+    const p = new Float64Array(M);
+    paintSegment(p, 0.1, 0, 1.9, 1, -Y, Y); // left to right: t = 1.5 is painted after t = 0.5
+    expect(p[M / 2]).toBeCloseTo((1.5 - 0.1) / 1.8, 3);
+    paintSegment(p, 1.9, 1, 0.1, 0, -Y, Y); // right to left: t = 0.5 comes last
+    expect(p[M / 2]).toBeCloseTo((0.5 - 0.1) / 1.8, 3);
   });
 
   it('a drawn constant shows up as a₀ only', () => {

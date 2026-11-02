@@ -1,5 +1,5 @@
 // Demo "Fourier-Reihe: Annäherung & Spektrum" (d09, Folie 9): a periodic
-// signal (preset or drawn by hand) and its approximation with N harmonics,
+// signal (preset or drawn by hand) and its approximation with the harmonics up to n = N,
 // updated live while N changes, plus the magnitude spectrum aₙ (bars beyond N
 // greyed out) and/or the phase spectrum θₙ. Dragging on the signal plot draws
 // one period; presets and drawings share the same sampled-period pipeline.
@@ -18,11 +18,23 @@ import {
   urlState,
 } from '../../src/lib/controls';
 import { createPlot, legendElement, roles } from '../../src/lib/plot';
-import { M, N_MAX, coefficients, maxValue, paintSegment, presetPeriod, type Preset } from './model';
+import {
+  JUMP_AT,
+  M,
+  N_MAX,
+  coefficients,
+  contained,
+  maxValue,
+  overshoot,
+  paintSegment,
+  phaseDegrees,
+  presetPeriod,
+  type Preset,
+} from './model';
 
 const state = urlState({
   sig: 'rechteck', // rechteck | dreieck | saegezahn | sinus | zeichnen
-  n: 5, // number of harmonics N
+  n: 5, // highest harmonic N: the approximation uses n = 0 … N
   view: 'betrag', // betrag | phase | beide
 });
 
@@ -33,8 +45,14 @@ const SIGNALS = [
   { value: 'sinus', label: 'Sinus' },
   { value: 'zeichnen', label: 'Zeichnen' },
 ];
-/** Visible value range ±Y of the signal plot; drawings are clamped to it. */
+/** Visible value range ±Y of the signal plot. */
 const Y = 1.5;
+/**
+ * Drawings are clamped to ±DRAW_Y, the range of the presets, so their
+ * approximation stays inside ±Y (a ±1 square reaches 4/π ≈ 1,27 at N = 1, a
+ * pulse 2/3 high and 1/3 low ≈ 1,44; at ±Y it would be clipped).
+ */
+const DRAW_Y = 1;
 /** Periods shown in the signal plot. */
 const PERIODS = 2;
 const BAR_WIDTH = 0.7;
@@ -56,6 +74,8 @@ function currentPeriod(): Float64Array {
 }
 
 let coeffs: FourierCoefficients = coefficients(currentPeriod());
+/** present[n]: aₙ counts as contained (see AMP_EPS in model.ts). */
+let present: boolean[] = contained(coeffs);
 const origXs = new Float64Array(PERIODS * M + 1).map((_, k) => k / M);
 const origYs = new Float64Array(PERIODS * M + 1);
 let origMax = 0;
@@ -63,6 +83,7 @@ let origMax = 0;
 function updateSignal(): void {
   const p = currentPeriod();
   coeffs = coefficients(p);
+  present = contained(coeffs);
   for (let k = 0; k < origYs.length; k++) origYs[k] = p[k % M];
   origMax = p.reduce((m, v) => Math.max(m, v), -Infinity);
 }
@@ -89,11 +110,11 @@ const signalPlot = createPlot(qs('#plot-signal'), {
   },
 });
 
-/** Harmonic numbers with aₙ > 0, split into "in the approximation" (n ≤ N) and the rest. */
+/** Harmonic numbers that are contained, split into "in the approximation" (n ≤ N) and the rest. */
 function splitHarmonics(): { used: number[]; missing: number[] } {
   const used: number[] = [];
   const missing: number[] = [];
-  for (let k = 0; k <= N_MAX; k++) if (coeffs.amp[k] > 0) (k <= state.values.n ? used : missing).push(k);
+  for (let k = 0; k <= N_MAX; k++) if (present[k]) (k <= state.values.n ? used : missing).push(k);
   return { used, missing };
 }
 
@@ -125,7 +146,7 @@ const phasePlot = createPlot(qs('#plot-phase'), {
   ariaLabel: 'Phasenspektrum: Phasen θ_n der Harmonischen in Grad',
   draw(p) {
     const { used, missing } = splitHarmonics();
-    const phase = (ks: number[]): number[] => ks.map((k) => (coeffs.phase[k] * 180) / Math.PI);
+    const phase = (ks: number[]): number[] => ks.map((k) => phaseDegrees(coeffs.phase[k]));
     p.stems(missing, phase(missing), { color: roles.copy, alpha: 0.55, width: 2, radius: 3.5 });
     p.stems(used, phase(used), { color: roles.reconstruction, width: 3, radius: 4.5 });
     p.vline(state.values.n + 0.5, { color: roles.marker, width: 2, dash: [8, 5] });
@@ -137,7 +158,7 @@ phaseArea = phasePlot.area;
 qs('#cap-signal').append(
   legendElement([
     { label: 'Original x(t)', color: roles.original, dash: [5, 3] },
-    { label: 'Annäherung mit N Harmonischen', color: roles.reconstruction, width: 3.5 },
+    { label: 'Annäherung bis n = N', color: roles.reconstruction, width: 3.5 },
   ]),
 );
 const specLegend = (): HTMLElement =>
@@ -153,6 +174,13 @@ qs('#cap-phase').append(specLegend());
 
 const canvas = signalPlot.canvas;
 let last: [number, number] | null = null;
+/**
+ * Pointer-down on a preset, in client px: the preset is copied into the drawing
+ * (and "Zeichnen" selected) only once the pointer has moved DRAG_PX, so a plain
+ * click or tap changes nothing.
+ */
+let pressAt: [number, number] | null = null;
+const DRAG_PX = 4;
 
 function pointerData(ev: PointerEvent): [number, number] {
   const [t, y] = signalPlot.eventToData(ev);
@@ -160,24 +188,32 @@ function pointerData(ev: PointerEvent): [number, number] {
 }
 
 function paint(a: [number, number], b: [number, number]): void {
-  paintSegment(drawing, a[0], a[1], b[0], b[1], -Y, Y);
+  paintSegment(drawing, a[0], a[1], b[0], b[1], -DRAW_Y, DRAW_Y);
 }
 
 canvas.addEventListener('pointerdown', (ev) => {
   if (ev.button !== 0) return;
   ev.preventDefault();
   canvas.setPointerCapture(ev.pointerId);
-  stopAnimation();
-  if (state.values.sig !== 'zeichnen') {
-    drawing.set(currentPeriod());
-    state.set('sig', 'zeichnen');
-  }
   last = pointerData(ev);
+  if (state.values.sig !== 'zeichnen') {
+    pressAt = [ev.clientX, ev.clientY];
+    return;
+  }
+  stopAnimation();
   paint(last, last);
   signalChanged();
 });
 canvas.addEventListener('pointermove', (ev) => {
   if (!last || !canvas.hasPointerCapture(ev.pointerId)) return;
+  if (pressAt) {
+    if (Math.hypot(ev.clientX - pressAt[0], ev.clientY - pressAt[1]) < DRAG_PX) return;
+    pressAt = null;
+    stopAnimation();
+    drawing.set(currentPeriod());
+    state.set('sig', 'zeichnen');
+    paint(last, last);
+  }
   for (const e of ev.getCoalescedEvents?.() ?? [ev]) {
     const cur = pointerData(e);
     paint(last, cur);
@@ -187,6 +223,7 @@ canvas.addEventListener('pointermove', (ev) => {
 });
 const endStroke = (): void => {
   last = null;
+  pressAt = null;
 };
 canvas.addEventListener('pointerup', endStroke);
 canvas.addEventListener('pointercancel', endStroke);
@@ -213,6 +250,8 @@ function startAnimation(): void {
 
 function scheduleStep(): void {
   const n = state.values.n;
+  // a step with aₙ = 0 (e.g. even n for the square, n ≥ 2 for the sine) leaves the curve as it is: move on quickly
+  const delay = !present[n] ? 80 : n < 10 ? 700 : n < 20 ? 350 : 150;
   animTimer = window.setTimeout(
     () => {
       if (state.values.n >= N_MAX) return stopAnimation();
@@ -220,7 +259,7 @@ function scheduleStep(): void {
       if (state.values.n >= N_MAX) stopAnimation();
       else scheduleStep();
     },
-    n < 10 ? 700 : n < 20 ? 350 : 150,
+    delay,
   );
 }
 
@@ -252,12 +291,12 @@ qs('#controls').append(
   clearBtn,
   slider(state, {
     key: 'n',
-    label: 'Anzahl Harmonische',
+    label: 'Harmonische bis',
     symbol: 'N',
     min: 0,
     max: N_MAX,
     step: 1,
-    info: 'Harmonische: Kosinus-Schwingung mit der Frequenz n·f₀ (n = 1, 2, 3, …). N ist die Zahl der Harmonischen, die in der Annäherung (rot) enthalten sind.',
+    info: 'Harmonische: Kosinus-Schwingung mit der Frequenz n·f₀ (n = 1, 2, 3, …). Die Annäherung (rot) summiert a₀ und alle Harmonischen bis n = N. Ist aₙ = 0 (z. B. gerade n beim Rechteck), ändert dieses n nichts.',
   }),
   animBtn,
   select(state, {
@@ -284,7 +323,9 @@ const num = (v: number): string => formatNumber(v, 2);
 
 const F0_TIP = 'Grundfrequenz f₀ = 1/T, wobei T die Periodendauer ist. Die n-te Harmonische hat die Frequenz n·f₀.';
 const JUMP_TIP =
-  'Sprunghöhe: Unterschied der Werte direkt vor und nach einem Sprung (Rechteck und Sägezahn: von +1 auf −1, also 2). Das Überschwingen geht für großes N gegen etwa 9 % davon und verschwindet nicht (Gibbs-Phänomen).';
+  'Sprunghöhe: Unterschied der Werte direkt vor und nach einem Sprung (Rechteck und Sägezahn: von +1 auf −1, also 2). Überschwingen: wie weit die Annäherung neben dem Sprung über dem Original liegt. Es geht für großes N gegen etwa 9 % der Sprunghöhe und verschwindet nicht (Gibbs-Phänomen).';
+
+const sub = (k: number): string => String(k).replace(/\d/g, (d) => '₀₁₂₃₄₅₆₇₈₉'[Number(d)]);
 
 // The readout is built once (the info tips must stay attached while N changes or the animation runs);
 // renderStatus only updates the text of the spans and toggles visibility.
@@ -304,17 +345,26 @@ status.append(el('span', headText, f0Term, headTail), el('br'), peakLine, overBr
 
 function renderStatus(): void {
   const { n, sig } = state.values;
-  headText.textContent = n === 0 ? 'N = 0 → nur der Gleichanteil a₀' : `N = ${n} → höchste Frequenz ${n}·`;
-  f0Term.hidden = n === 0;
-  f0Term.style.display = n === 0 ? 'none' : '';
-  headTail.textContent = n === 1 ? ' (nur die Grundschwingung)' : '';
+  // highest frequency actually in the approximation (the square has a₄ = 0, so N = 4 ends at 3·f₀)
+  let hi = n;
+  while (hi > 0 && !present[hi]) hi--;
+  headText.textContent = hi === 0 ? `N = ${n} → nur der Gleichanteil a₀` : `N = ${n} → höchste Frequenz ${hi}·`;
+  f0Term.hidden = hi === 0;
+  f0Term.style.display = hi === 0 ? 'none' : '';
+  const notes: string[] = [];
+  if (hi === 1) notes.push('nur die Grundschwingung');
+  if (hi < n) notes.push(`${hi + 1 === n ? '' : `a${sub(hi + 1)} … `}a${sub(n)} = 0`);
+  headTail.textContent = notes.length ? ` (${notes.join(', ')})` : '';
   const peak = maxValue(coeffs, n);
   peakLine.textContent = `Größter Wert: Original ${num(origMax)}, Annäherung ${num(peak)}`;
-  // the rectangle and sawtooth presets jump by 2 (from +1 to −1)
-  const over = (sig === 'rechteck' || sig === 'saegezahn') && peak - 1 >= 0.01;
-  overLine.style.display = over ? '' : 'none';
-  overBr.style.display = over ? '' : 'none';
-  overText.textContent = over ? `→ Überschwingen um ${formatNumber(((peak - 1) / 2) * 100)} % der ` : '';
+  // Rechteck and Sägezahn jump by 2 (from +1 to −1). With a single harmonic there is no edge yet, so no overshoot line.
+  const jumpAt = JUMP_AT[sig as Preset];
+  const harmonics = present.slice(1, n + 1).filter(Boolean).length;
+  const over = jumpAt !== undefined && harmonics >= 2 ? overshoot(currentPeriod(), coeffs, n, jumpAt) : 0;
+  const show = over >= 0.005;
+  overLine.style.display = show ? '' : 'none';
+  overBr.style.display = show ? '' : 'none';
+  overText.textContent = show ? `→ Überschwingen um ${formatNumber(over * 100)} % der ` : '';
 }
 
 function renderTable(): void {
@@ -329,7 +379,7 @@ function renderTable(): void {
       String(k),
       k === 0 ? '0' : k === 1 ? 'f₀' : `${k} f₀`,
       formatNumber(a, 3),
-      a === 0 ? '–' : `${formatNumber((coeffs.phase[k] * 180) / Math.PI, 1)}°`,
+      present[k] ? `${formatNumber(phaseDegrees(coeffs.phase[k]), 1)}°` : '–',
     ];
     for (const c of cells) {
       const td = document.createElement('td');
