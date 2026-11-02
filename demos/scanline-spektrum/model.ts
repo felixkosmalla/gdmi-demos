@@ -2,7 +2,7 @@
 // column, its spectrum, a simple FFT low-pass, and URL parameter cleanup.
 // No DOM access, so everything here is unit-tested in model.test.ts.
 import { fft, ifft, magnitudeSpectrum } from '../../src/lib/dsp';
-import { N, PATTERNS } from './patterns';
+import { CHECKER_SQUARES, N, PATTERNS, STRIPES_COARSE, STRIPES_FINE } from './patterns';
 
 export type Direction = 'zeile' | 'spalte';
 
@@ -128,4 +128,29 @@ export function normalizeParams(p: Params, defaults: Params): Params {
     pos: Math.min(1, Math.max(0, p.pos)),
     tp: Math.min(K_MAX, Math.max(1, Math.round(p.tp))),
   };
+}
+
+/** Info-tip text for "Ortsfrequenz", adapted to the shown image and the line direction. */
+export function ortsfrequenzInfo(id: ImageId | 'eigenes', dir: Direction): string {
+  const across = dir === 'zeile' ? 'Bildbreite' : 'Bildhöhe';
+  const def = `Ortsfrequenz k: Perioden pro ${across}, also wie oft sich die Helligkeit entlang der Linie wiederholt. `;
+  const flat = dir === 'spalte' && (id === 'streifen-grob' || id === 'streifen-fein' || id === 'kante');
+  if (flat) return def + 'Hier ändert sich die Helligkeit entlang der Linie nicht: Es gibt nur k = 0, den Mittelwert.';
+  switch (id) {
+    case 'streifen-grob':
+    case 'streifen-fein': {
+      const n = id === 'streifen-grob' ? STRIPES_COARSE : STRIPES_FINE;
+      return def + `Hier passen ${n} Hell-Dunkel-Streifen ins Bild, der einzige Gipfel liegt bei k = ${n}.`;
+    }
+    case 'schachbrett': {
+      const n = CHECKER_SQUARES / 2;
+      return def + `Hier wiederholt sich ein Feldpaar (hell, dunkel) ${n}-mal, der stärkste Gipfel liegt bei k = ${n}.`;
+    }
+    case 'verlauf':
+      return def + 'Der weiche Verlauf ändert sich langsam: Es kommen fast nur kleine k vor.';
+    case 'kante':
+      return def + 'Die Kante enthält viele Frequenzen (k = 1, 3, 5, …), die mit wachsendem k schwächer werden.';
+    default: // foto, eigenes
+      return def + 'Glatte Flächen ergeben kleine k, feine Details und Kanten große k.';
+  }
 }

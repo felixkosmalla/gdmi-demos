@@ -8,7 +8,7 @@ import {
   button,
   formatNumber,
   fullscreenButton,
-  ideaCredit,
+  infoTerm,
   qs,
   select,
   slider,
@@ -27,6 +27,7 @@ import {
   luminance,
   maxAcAmplitude,
   normalizeParams,
+  ortsfrequenzInfo,
   peakBin,
   posOfIndex,
   type Direction,
@@ -539,6 +540,7 @@ qs('#extra-controls').append(
   slider(state, {
     key: 'tp',
     label: 'Tiefpass: behält nur k ≤ Grenze',
+    info: 'Ein Tiefpass behält nur die Frequenzen bis zur Grenze und entfernt die höheren. Der rote Verlauf verliert dadurch die feinen Zacken; ein ganzes so gefiltertes Bild würde unscharf. Ähnlich spart verlustbehaftete Kompression (z. B. JPEG) Speicher.',
     min: 1,
     max: K_MAX,
     step: 1,
@@ -557,12 +559,51 @@ const reset = button({
   },
 });
 qs('#head-actions').append(fullscreenButton(lecture), reset);
-lecture.append(ideaCredit('scanline-spektrum'));
 
 // ---------------------------------------------------------------------------
 // Caption, readout, rendering
 
 const status = qs('#status');
+const stMsg = qs('#st-msg');
+const stLines = qs('#st-lines');
+const stFlat = qs('#st-flat');
+const stPeak = qs('#st-peak');
+const stEnergy = qs('#st-energy');
+const stTp = qs('#st-tp');
+const stK = qs('#st-k');
+const stN = qs('#st-n');
+const stPer = qs('#st-per');
+const stAcross = qs('#st-across');
+const stKlow = qs('#st-klow');
+const stShare = qs('#st-share');
+
+/** Puts a persistent element (keeps its identity) into an infoTerm at its current place. */
+function wrapTerm(el: HTMLElement, make: (el: HTMLElement) => HTMLElement): void {
+  const holder = document.createElement('span');
+  el.replaceWith(holder);
+  holder.replaceWith(make(el));
+}
+// The readout structure is built once, so the tip buttons stay attached while the text changes.
+wrapTerm(stPer, (el) =>
+  infoTerm(
+    el,
+    'Eine Periode ist eine volle Wiederholung des Musters, z. B. ein Paar aus hellem und dunklem Streifen. Der Gipfel bei k heißt: k Perioden passen in die Bildbreite (Spalte: Bildhöhe), die Periodenlänge ist 512/k Pixel.',
+    'Periode',
+  ),
+);
+const energyTerm = qs('#st-energy-term');
+energyTerm.textContent = 'Energie';
+wrapTerm(energyTerm, (el) =>
+  infoTerm(
+    el,
+    'Energie = Summe der quadrierten Amplituden. Der Wert gibt an, welcher Anteil davon in den tiefsten Frequenzen k = 1 bis 16 steckt (der Mittelwert bei k = 0 zählt nicht mit).',
+  ),
+);
+// Ortsfrequenz tip in the spectrum caption: the text depends on the image and the direction
+wrapTerm(qs('#ortsfreq-term'), (el) => infoTerm(el, ortsfrequenzInfo('foto', 'zeile'), 'Ortsfrequenz'));
+const ortsButton = qs('#cap-spectrum .info-tip');
+stKlow.textContent = String(K_LOW);
+
 /** Rounded percentage that never claims 100 % or 0 % for a share that isn't exactly that. */
 function pct(v: number): string {
   if (v > 1 - 1e-9) return '100 %';
@@ -573,20 +614,25 @@ function pct(v: number): string {
 
 function renderStatus(): void {
   status.className = message?.bad ? 'status status--bad' : 'status';
-  if (message || !picture) {
-    status.textContent = message?.text ?? '';
+  const showMsg = Boolean(message) || !picture;
+  stMsg.hidden = !showMsg;
+  stLines.hidden = showMsg;
+  if (showMsg) {
+    stMsg.textContent = message?.text ?? '';
     return;
   }
-  const lines: string[] = [];
-  if (peak < 0) {
-    lines.push('Die Linie ist überall gleich hell: nur der Mittelwert (k = 0).');
-  } else {
-    lines.push(`Stärkste Frequenz: k = ${peak} (${peak} ${peak === 1 ? 'Periode' : 'Perioden'} pro ${across()})`);
-    lines.push(`Energie bei k ≤ ${K_LOW}: ${pct(lowEnergyShare(spec, K_LOW))} (ohne Mittelwert)`);
-    const tp = state.values.tp;
-    if (tp < K_MAX && tp !== K_LOW) lines.push(`Tiefpass behält k ≤ ${tp}: ${pct(lowEnergyShare(spec, tp))} der Energie`);
-  }
-  status.replaceChildren(...lines.flatMap((l, i) => (i ? [document.createElement('br'), l] : [l])));
+  stFlat.hidden = peak >= 0;
+  stPeak.hidden = stEnergy.hidden = peak < 0;
+  const tp = state.values.tp;
+  const showTp = peak >= 0 && tp < K_MAX && tp !== K_LOW;
+  stTp.hidden = !showTp;
+  if (peak < 0) return;
+  stK.textContent = String(peak);
+  stN.textContent = String(peak);
+  stPer.textContent = peak === 1 ? 'Periode' : 'Perioden';
+  stAcross.textContent = across();
+  stShare.textContent = pct(lowEnergyShare(spec, K_LOW));
+  if (showTp) stTp.textContent = `Tiefpass behält k ≤ ${tp}: ${pct(lowEnergyShare(spec, tp))} der Energie`;
 }
 
 function renderCaption(): void {
@@ -594,6 +640,7 @@ function renderCaption(): void {
   const where = dir() === 'zeile' ? `Zeile y = ${i}` : `Spalte x = ${i}`;
   const name = custom ? `Eigenes Bild (${custom.name})` : LABELS[state.values.img as ImageId];
   qs('#cap-image').textContent = `${name} · ${where}`;
+  ortsButton.dataset.info = ortsfrequenzInfo(custom ? 'eigenes' : (state.values.img as ImageId), dir());
   imgWrap.dataset.dir = dir();
   imgCanvas.setAttribute('aria-orientation', dir() === 'zeile' ? 'vertical' : 'horizontal');
   imgCanvas.setAttribute('aria-valuemin', '0');

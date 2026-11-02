@@ -140,6 +140,15 @@
         <a class="back" href="../">← Alle Demos</a>
         <h1>Frequenzraum bei Bilddaten</h1>
         <div class="head-actions" id="head-actions"></div>
+        <p class="sources">
+          Quelle / Idee: Java-Applet „1D Fast Fourier Transform“ von A. van Dam und D. L. Gould, Brown University
+          Exploratories (früher unter www.cs.brown.edu/exploratories/…/1d_fast_fourier_transform_guide.html; läuft in
+          heutigen Browsern nicht mehr).
+          Foto: „Château Frontenac, Quebec city, Canada“ von Wilfredo Rafael Rodriguez Hernandez (Wilfredor),
+          Wikimedia Commons,
+          <a href="https://commons.wikimedia.org/wiki/File:Ch%C3%A2teau_Frontenac,_Quebec_city,_Canada.jpg">commons.wikimedia.org/wiki/File:Château_Frontenac,_Quebec_city,_Canada.jpg</a>,
+          <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.de">CC0 1.0</a>, zugeschnitten und auf 512 × 512 Pixel verkleinert.
+        </p>
       </header>
 
       <div id="split">
@@ -150,7 +159,16 @@
               <canvas id="image" tabindex="0" role="slider" aria-label="Position der Linie im Bild"></canvas>
             </div>
           </figure>
-          <p class="status" id="status" aria-live="polite"></p>
+          <div class="status" id="status">
+            <p id="st-msg" aria-live="polite" hidden></p>
+            <div id="st-lines">
+              <div id="st-flat" hidden>Die Linie ist überall gleich hell: nur der Mittelwert (k = 0).</div>
+              <div id="st-peak">Stärkste Frequenz: k = <span id="st-k"></span> (<span id="st-n"></span>
+                <span id="st-per"></span> pro <span id="st-across"></span>)</div>
+              <div id="st-energy"><span id="st-energy-term"></span> bei k ≤ <span id="st-klow"></span>: <span id="st-share"></span> (ohne Mittelwert)</div>
+              <div id="st-tp" hidden></div>
+            </div>
+          </div>
         </div>
 
         <div class="plots" id="plots">
@@ -159,7 +177,7 @@
             <div class="plot" id="plot-profile"></div>
           </figure>
           <figure class="plot-box">
-            <figcaption class="caption-row" id="cap-spectrum"><span>Spektrum</span></figcaption>
+            <figcaption class="caption-row" id="cap-spectrum"><span>Spektrum über der <span id="ortsfreq-term">Ortsfrequenz</span> k</span></figcaption>
             <div class="plot" id="plot-spectrum"></div>
           </figure>
         </div>
@@ -178,6 +196,7 @@
     </main>
 
     <section class="explain">
+      <!-- Auf Wunsch ausgeblendet (2026-11-02): Erklärung
       <h2>Erklärung</h2>
       <p>
         <strong>Ein Bild ist ein 2D-Signal.</strong> Bei Audiodaten hängt der Wert von der Zeit t ab, bei
@@ -232,9 +251,12 @@
         Energie haben, ändert sich ein Bild kaum, wenn man sie weglässt oder gröber speichert. Das probiert der
         Tiefpass unten aus. Verfahren wie JPEG nutzen genau das (Details später in der Vorlesung).
       </p>
+      -->
 
-      <h2>Ausprobieren / Aufgaben</h2>
+      <h2>Weitere Einstellungen</h2>
       <div class="controls" id="extra-controls"></div>
+
+      <!-- Auf Wunsch ausgeblendet (2026-11-02): Aufgaben
       <ol>
         <li>
           Vergleiche „Streifen grob“ und „Streifen fein“: Wo liegt der Gipfel im Spektrum, und wie hängt er mit
@@ -307,24 +329,7 @@
           </details>
         </li>
       </ol>
-
-      <h2>Quelle / Idee</h2>
-      <p class="source">
-        Idee nach dem Java-Applet „1D Fast Fourier Transform“ von A. van Dam und D. L. Gould, Brown University
-        Exploratories (früher unter
-        www.cs.brown.edu/exploratories/freeSoftware/repository/edu/brown/cs/exploratories/applets/fft1DApp/1d_fast_fourier_transform_guide.html;
-        läuft in heutigen Browsern nicht mehr). Dort zog man eine Abtastlinie über ein Testbild und sah
-        darüber den Verlauf im Ortsbereich und im Frequenzbereich. Neu umgesetzt für die Vorlesung „Grundlagen
-        der Medieninformatik“.
-      </p>
-      <p class="source">
-        Foto: „Château Frontenac, Quebec city, Canada“ von Wilfredo Rafael Rodriguez Hernandez (Wilfredor),
-        Wikimedia Commons,
-        <a href="https://commons.wikimedia.org/wiki/File:Ch%C3%A2teau_Frontenac,_Quebec_city,_Canada.jpg"
-          >commons.wikimedia.org/wiki/File:Château_Frontenac,_Quebec_city,_Canada.jpg</a
-        >, Lizenz <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.de">CC0 1.0</a> (gemeinfrei).
-        Zugeschnitten und auf 512 × 512 Pixel verkleinert.
-      </p>
+      -->
     </section>
   </body>
 </html>

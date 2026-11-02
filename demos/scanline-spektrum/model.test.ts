@@ -9,6 +9,7 @@ import {
   luminance,
   maxAcAmplitude,
   normalizeParams,
+  ortsfrequenzInfo,
   peakBin,
   posOfIndex,
 } from './model';
@@ -132,5 +133,17 @@ describe('normalizeParams', () => {
     });
     expect(normalizeParams({ img: 'kante', dir: 'zeile', pos: -2, tp: 3.6 }, defaults)).toMatchObject({ pos: 0, tp: 4 });
     expect(normalizeParams({ img: 'kante', dir: 'zeile', pos: 0, tp: 0 }, defaults).tp).toBe(1);
+  });
+});
+
+describe('ortsfrequenzInfo', () => {
+  it('names the stripe count and direction', () => {
+    expect(ortsfrequenzInfo('streifen-fein', 'zeile')).toContain('k = 32');
+    expect(ortsfrequenzInfo('streifen-grob', 'zeile')).toContain('k = 8');
+    expect(ortsfrequenzInfo('foto', 'spalte')).toContain('Bildhöhe');
+    expect(ortsfrequenzInfo('foto', 'zeile')).toContain('Bildbreite');
+  });
+  it('says a column of stripes is constant', () => {
+    expect(ortsfrequenzInfo('streifen-grob', 'spalte')).toContain('nur k = 0');
   });
 });
